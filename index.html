@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Kompas Jurusan Cahaya — Asesmen Arah Studi & Karier</title>
   <meta name="description" content="Asesmen arah studi dan karier yang membantu pelajar menentukan jurusan secara lebih sadar, terukur, dan mudah dipahami.">
+  <link rel="canonical" href="https://kompasjurusan.cahayaapp.com/">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="assets/app.css">
 </head>
@@ -58,13 +61,8 @@
     </section>
 
     <section class="auth-shell">
-      <div class="session-loading" id="sessionLoading">
-        <div class="loader"></div>
-        <b>Menyiapkan ruangmu…</b>
-        <small>Memeriksa sesi dan akses akun.</small>
-      </div>
-
-      <div id="authBox" class="hidden">
+      <div id="authBox">
+        <div id="sessionHint" class="message info" style="margin-bottom:18px">Masuk atau daftar untuk melanjutkan. Jika kamu sudah pernah masuk, akunmu akan dikenali otomatis.</div>
         <div class="auth-head">
           <div class="kicker">Mulai dari sini</div>
           <h2 id="authTitle">Masuk ke akunmu</h2>

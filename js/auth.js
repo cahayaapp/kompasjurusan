@@ -5,7 +5,7 @@ import {
 import { ensurePublicSettings, fillPublicPrices, setMessage, renderBrand } from './common.js';
 
 const authBox = document.getElementById('authBox');
-const sessionLoading = document.getElementById('sessionLoading');
+const sessionHint = document.getElementById('sessionHint');
 const authForm = document.getElementById('authForm');
 const authMsg = document.getElementById('authMsg');
 const tabLogin = document.getElementById('tabLogin');
@@ -47,13 +47,30 @@ async function bootstrap(){
   document.querySelectorAll('[data-brand]').forEach(renderBrand);
   const settings = await ensurePublicSettings();
   fillPublicPrices(settings.price);
+  let settled = false;
+  const fallback = setTimeout(()=>{
+    if(!settled && sessionHint){
+      sessionHint.textContent = 'Form siap digunakan. Pemeriksaan sesi masih berjalan di belakang.';
+    }
+  }, 2200);
+
   onAuthStateChanged(auth, async (user)=>{
+    settled = true;
+    clearTimeout(fallback);
     if(user){
+      if(sessionHint) sessionHint.textContent = 'Akun ditemukan. Menyiapkan dashboard…';
       const profile = await getProfile(user.uid);
       if(profile?.role){ routeByRole(profile); return; }
     }
-    sessionLoading?.classList.add('hidden');
-    authBox?.classList.remove('hidden');
+    if(sessionHint) sessionHint.classList.add('hidden');
+  }, (error)=>{
+    settled = true;
+    clearTimeout(fallback);
+    console.error(error);
+    if(sessionHint){
+      sessionHint.textContent = 'Pemeriksaan sesi tidak berhasil, tetapi form login tetap dapat digunakan.';
+      sessionHint.classList.remove('hidden');
+    }
   });
 }
 

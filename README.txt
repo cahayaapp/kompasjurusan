@@ -45,3 +45,15 @@ drafts/{uid}
 results/{uid}/{resultId}
 
 SELESAI.
+
+DOMAIN PRODUKSI
+- Domain utama: https://kompasjurusan.cahayaapp.com
+- File CNAME sudah disertakan untuk GitHub Pages.
+- Tambahkan kompasjurusan.cahayaapp.com ke Firebase Authentication > Settings > Authorized domains.
+- Setelah DNS GitHub Pages valid, aktifkan Enforce HTTPS agar alamat tidak lagi tampil "Not Secure".
+
+PERBAIKAN V6
+- Form login tampil langsung tanpa menunggu pemeriksaan sesi.
+- Pemeriksaan sesi berjalan di belakang dan tidak lagi membuat panel putih kosong.
+- Ditambahkan koneksi awal ke layanan Firebase untuk mempercepat inisialisasi.
+- Canonical URL disesuaikan ke kompasjurusan.cahayaapp.com.
