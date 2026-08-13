@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard Admin — Kompas Jurusan Cahaya</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="admin.html" data-brand></a>
+      <div class="sidebar-card user-card">
+        <div class="avatar" data-user-initials>A</div>
+        <div class="user-meta"><b data-user-name>Administrator</b><small data-user-email>-</small></div>
+      </div>
+      <nav class="side-nav">
+        <button class="active" type="button" data-section-target="section-dashboard"><span class="nav-icon">📈</span>Dashboard</button>
+        <button type="button" data-section-target="section-payments"><span class="nav-icon">💳</span>Verifikasi pembayaran</button>
+        <button type="button" data-section-target="section-participants"><span class="nav-icon">👥</span>Peserta</button>
+        <button type="button" data-section-target="section-settings"><span class="nav-icon">⚙️</span>Pengaturan</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="sidebar-card"><small style="color:var(--text-soft);line-height:1.8">Gunakan dashboard ini untuk memverifikasi pembayaran, memantau peserta, dan mengatur informasi pembayaran.</small></div>
+        <button id="logoutBtn" class="btn btn-secondary btn-block" type="button">Keluar</button>
+      </div>
+    </aside>
+
+    <aside class="mobile-panel" id="mobilePanel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <a class="brand" href="admin.html" data-brand></a>
+        <button class="icon-btn" id="closeMobilePanel" type="button">×</button>
+      </div>
+      <div class="sidebar-card user-card">
+        <div class="avatar" data-user-initials>A</div>
+        <div class="user-meta"><b data-user-name>Administrator</b><small data-user-email>-</small></div>
+      </div>
+      <nav class="side-nav">
+        <button class="active" type="button" data-section-target="section-dashboard"><span class="nav-icon">📈</span>Dashboard</button>
+        <button type="button" data-section-target="section-payments"><span class="nav-icon">💳</span>Verifikasi pembayaran</button>
+        <button type="button" data-section-target="section-participants"><span class="nav-icon">👥</span>Peserta</button>
+        <button type="button" data-section-target="section-settings"><span class="nav-icon">⚙️</span>Pengaturan</button>
+      </nav>
+      <button id="logoutBtnMobile" class="btn btn-secondary btn-block" type="button">Keluar</button>
+    </aside>
+
+    <main class="main-area">
+      <div class="mobile-topbar">
+        <button class="btn btn-secondary btn-sm" id="mobileMenuBtn" type="button">☰ Menu</button>
+        <span class="chip">Dashboard Admin</span>
+      </div>
+
+      <section id="section-dashboard" class="section active">
+        <div class="topbar">
+          <div class="page-title"><h1>Dashboard admin</h1><p>Pantau aktivitas peserta, verifikasi pembayaran, dan lihat perkembangan asesmen dari satu dashboard yang rapi.</p></div>
+          <div id="dashboardPaymentsMini"></div>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="label">Total peserta</div><b id="statParticipants">0</b><small>Jumlah akun peserta aktif.</small></article>
+          <article class="stat-card"><div class="label">Menunggu verifikasi</div><b id="statPending">0</b><small>Pembayaran yang perlu ditinjau.</small></article>
+          <article class="stat-card"><div class="label">Pembayaran disetujui</div><b id="statApproved">0</b><small>Peserta yang aksesnya sudah aktif.</small></article>
+          <article class="stat-card"><div class="label">Total hasil asesmen</div><b id="statResults">0</b><small>Riwayat hasil yang sudah masuk.</small></article>
+        </div>
+        <div class="grid-2" style="margin-top:18px">
+          <div class="card">
+            <div class="panel-header"><div><h3>Fokus pekerjaan hari ini</h3><p>Gunakan panel ini untuk melihat antrean terdepan tanpa harus berpindah halaman.</p></div></div>
+            <div class="reco-list">
+              <div class="reco-card"><b>1. Verifikasi pembayaran</b><small>Pastikan bukti transfer jelas, nama pengirim sesuai, dan status diperbarui segera.</small></div>
+              <div class="reco-card"><b>2. Pantau hasil peserta</b><small>Lihat rumpun studi yang dominan untuk bahan diskusi lanjutan.</small></div>
+              <div class="reco-card"><b>3. Jaga informasi pembayaran</b><small>Pastikan nominal, bank, dan rekening tujuan selalu sesuai.</small></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="panel-header"><div><h3>Hasil terbaru peserta</h3><p>Enam laporan terakhir yang masuk ke sistem.</p></div></div>
+            <div id="recentResults"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-payments" class="section">
+        <div class="topbar">
+          <div class="page-title"><h1>Verifikasi pembayaran</h1><p>Periksa bukti transfer peserta, lalu setujui atau tolak dengan catatan yang jelas.</p></div>
+        </div>
+        <div class="card">
+          <div class="panel-header"><div><h3>Daftar pembayaran</h3><p>Urutan pembayaran ditampilkan dari yang terbaru.</p></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Peserta</th><th>Pengirim</th><th>Jumlah</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="paymentsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-participants" class="section">
+        <div class="topbar">
+          <div class="page-title"><h1>Data peserta</h1><p>Lihat daftar peserta, status akses, dan hasil terakhir yang mereka peroleh.</p></div>
+        </div>
+        <div class="card">
+          <div class="panel-header"><div><h3>Daftar peserta</h3><p>Data ini otomatis terhubung dengan aktivitas pembayaran dan hasil asesmen.</p></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nama</th><th>Kelas</th><th>Asal</th><th>Status akses</th><th>Hasil terbaru</th><th>Waktu tes terakhir</th></tr></thead>
+              <tbody id="participantsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-settings" class="section">
+        <div class="topbar">
+          <div class="page-title"><h1>Pengaturan pembayaran</h1><p>Atur nominal akses dan rekening tujuan yang akan tampil pada halaman peserta.</p></div>
+        </div>
+        <div class="card">
+          <div class="panel-header"><div><h3>Informasi pembayaran</h3><p>Perubahan yang disimpan di sini akan langsung berlaku untuk peserta.</p></div></div>
+          <form id="settingsForm">
+            <div class="form-grid">
+              <div class="field"><label for="settingPrice">Harga akses</label><div class="input-wrap"><span>💰</span><input class="input" id="settingPrice" type="number" min="0"></div></div>
+              <div class="field"><label for="settingBankName">Nama bank</label><div class="input-wrap"><span>🏦</span><input class="input" id="settingBankName"></div></div>
+              <div class="field"><label for="settingAccountNumber">Nomor rekening</label><div class="input-wrap"><span>🔢</span><input class="input" id="settingAccountNumber"></div></div>
+              <div class="field"><label for="settingAccountName">Atas nama</label><div class="input-wrap"><span>👤</span><input class="input" id="settingAccountName"></div></div>
+            </div>
+            <div id="settingsMsg"></div>
+            <button class="btn btn-primary" type="submit">Simpan pengaturan</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="paymentModal">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="kicker">Verifikasi pembayaran</div><h3>Tinjau bukti transfer</h3></div><button class="icon-btn" id="closePaymentModal" type="button">×</button></div>
+      <div class="grid-2">
+        <div class="proof-preview" id="paymentReviewProof"></div>
+        <div>
+          <div id="paymentReviewMeta" class="reco-list"></div>
+          <div class="field" style="margin-top:16px"><label for="reviewNote">Catatan admin</label><textarea id="reviewNote" placeholder="Isi jika perlu memberi catatan saat menolak atau menjelaskan verifikasi."></textarea></div>
+          <div class="inline-actions"><button class="btn btn-primary" id="approvePaymentBtn" type="button">Setujui pembayaran</button><button class="btn btn-danger" id="rejectPaymentBtn" type="button">Tolak pembayaran</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

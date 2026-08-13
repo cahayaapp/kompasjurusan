@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kompas Jurusan Cahaya — Asesmen Arah Studi & Karier</title>
+  <meta name="description" content="Asesmen arah studi dan karier yang membantu pelajar menentukan jurusan secara lebih sadar, terukur, dan mudah dipahami.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container site-header-inner">
+      <a class="brand" href="index.html" data-brand></a>
+      <nav class="nav-inline">
+        <a href="#keunggulan">Keunggulan</a>
+        <a href="#cara-kerja">Cara Kerja</a>
+        <a href="#harga">Harga</a>
+        <button class="btn btn-primary btn-sm" type="button" data-register-now>Daftar Sekarang</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container hero-shell">
+    <section class="hero-panel">
+      <div class="hero-topline">
+        <div class="pill">🧭 Asesmen arah studi & karier</div>
+        <div class="pill">Sekali bayar • tes ulang berkali-kali</div>
+      </div>
+      <div class="soft-overline">KENALI DIRI • TEMUKAN ARAH • PILIH DENGAN SADAR</div>
+      <h1 class="hero-title">Jangan pilih jurusan hanya karena <span>ikut arus.</span></h1>
+      <p class="hero-desc">Kompas Jurusan membantu pelajar mengenali arah studi melalui empat sisi penting: minat RIASEC, kekuatan akademik, nilai hidup, dan gaya kerja. Hasilnya disusun sederhana, elegan, dan mudah dipahami untuk bahan diskusi bersama orang tua maupun pembimbing.</p>
+
+      <div class="price-card" id="harga">
+        <div>
+          <small>AKSES PENUH</small>
+          <strong data-public-price>Rp59.000</strong>
+          <p>Satu kali pembayaran untuk akses penuh. Setelah diverifikasi, peserta dapat mengerjakan tes ulang berkali-kali tanpa biaya tambahan.</p>
+        </div>
+        <div class="cta-inline">
+          <button class="btn btn-primary btn-lg" type="button" data-register-now>Mulai Daftar</button>
+          <a class="btn btn-secondary btn-lg" href="#cara-kerja">Lihat Cara Kerja</a>
+        </div>
+      </div>
+
+      <div class="hero-grid" id="keunggulan">
+        <article class="feature-card"><span class="icon">🧠</span><div><b>Pemetaan lebih menyeluruh</b><small>Bukan hanya menilai minat. Sistem memadukan minat, nilai hidup, gaya kerja, dan kekuatan akademik.</small></div></article>
+        <article class="feature-card"><span class="icon">🎯</span><div><b>Rekomendasi yang personal</b><small>Peserta mendapat rumpun studi dan contoh jurusan yang paling layak dieksplorasi sesuai pola jawabannya.</small></div></article>
+        <article class="feature-card"><span class="icon">📘</span><div><b>108 butir terpadu</b><small>Struktur asesmen dirancang cukup kaya untuk membaca potensi, namun tetap ringan dikerjakan satu per satu.</small></div></article>
+        <article class="feature-card"><span class="icon">🔁</span><div><b>Tes ulang gratis</b><small>Karena diri berkembang, peserta bisa mengulang tes kapan saja setelah akses aktif untuk membandingkan hasil.</small></div></article>
+      </div>
+
+      <div class="hero-footer-cards" id="cara-kerja">
+        <article class="mini-card"><span>01</span><b>Satu pernyataan per layar</b><small>Pengalaman mengerjakan lebih fokus, tenang, dan tidak terasa menumpuk.</small></article>
+        <article class="mini-card"><span>02</span><b>Progres tersimpan otomatis</b><small>Kalau berhenti di tengah, peserta bisa melanjutkan kembali tanpa mengulang dari awal.</small></article>
+        <article class="mini-card"><span>03</span><b>Hasil siap didiskusikan</b><small>Ringkasan hasil tersusun rapi agar mudah dipakai untuk konseling atau percakapan keluarga.</small></article>
+      </div>
+    </section>
+
+    <section class="auth-shell">
+      <div class="session-loading" id="sessionLoading">
+        <div class="loader"></div>
+        <b>Menyiapkan ruangmu…</b>
+        <small>Memeriksa sesi dan akses akun.</small>
+      </div>
+
+      <div id="authBox" class="hidden">
+        <div class="auth-head">
+          <div class="kicker">Mulai dari sini</div>
+          <h2 id="authTitle">Masuk ke akunmu</h2>
+          <p id="authSub">Masuk untuk melanjutkan perjalanan mengenali arah studimu.</p>
+        </div>
+
+        <div class="auth-switch">
+          <button type="button" id="tabLogin" class="active">Masuk</button>
+          <button type="button" id="tabRegister">Daftar Peserta</button>
+        </div>
+
+        <div class="offer-chip"></div>
+        <div id="authMsg"></div>
+
+        <form id="authForm">
+          <div class="field reg-only hidden">
+            <label for="regName">Nama lengkap</label>
+            <div class="input-wrap"><span>👤</span><input class="input" id="regName" placeholder="Nama lengkap peserta"></div>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <div class="input-wrap"><span>✉️</span><input class="input" id="email" type="email" required placeholder="nama@email.com"></div>
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="password">Kata sandi</label><button class="text-btn login-only" type="button" id="forgotBtn">Lupa kata sandi?</button></div>
+            <div class="input-wrap"><span>🔒</span><input class="input" id="password" type="password" minlength="6" required placeholder="Minimal 6 karakter"><button class="password-toggle" type="button" id="togglePass">Lihat</button></div>
+          </div>
+          <div class="field reg-only hidden">
+            <label for="confirmPassword">Ulangi kata sandi</label>
+            <div class="input-wrap"><span>✓</span><input class="input" id="confirmPassword" type="password" minlength="6" placeholder="Tulis ulang kata sandi"></div>
+          </div>
+          <label class="consent reg-only hidden"><input id="consent" type="checkbox"><span>Saya memahami bahwa hasil asesmen digunakan sebagai bahan eksplorasi dan diskusi, bukan keputusan mutlak jurusan kuliah.</span></label>
+          <button class="btn btn-primary btn-block btn-lg" id="authSubmit" type="submit">Masuk <span>→</span></button>
+        </form>
+
+        <div class="auth-trust">
+          <span>Hasil pribadi</span>
+          <span>Progres otomatis</span>
+          <span>Tes ulang berkali-kali</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="container footer-note">Kompas Jurusan Cahaya • Asesmen yang membantu peserta memilih arah studi dengan lebih jernih.</div>
+
+  <div class="modal" id="resetModal">
+    <div class="modal-card small-modal">
+      <div class="modal-head">
+        <div><div class="kicker">Reset akun</div><h3>Atur ulang kata sandi</h3></div>
+        <button class="icon-btn" id="closeReset" type="button">×</button>
+      </div>
+      <p class="message info">Masukkan email akunmu. Sistem akan mengirim tautan untuk membuat kata sandi baru.</p>
+      <form id="resetForm">
+        <div class="field">
+          <label for="resetEmail">Email</label>
+          <div class="input-wrap"><span>✉️</span><input class="input" id="resetEmail" type="email" required placeholder="nama@email.com"></div>
+        </div>
+        <div id="resetMsg"></div>
+        <button class="btn btn-primary btn-block" type="submit">Kirim tautan reset</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>
