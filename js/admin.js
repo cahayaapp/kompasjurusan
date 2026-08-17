@@ -48,12 +48,12 @@ function renderPayments(){
   if(!state.payments.length){ tbody.innerHTML = '<tr><td colspan="6">Belum ada data pembayaran.</td></tr>'; return; }
   tbody.innerHTML = state.payments.map(item=>`
     <tr>
-      <td><strong>${item.participantName || '-'}</strong><small>${item.participantEmail || ''}</small></td>
-      <td><strong>${item.senderName}</strong><small>${item.senderBank}</small></td>
-      <td>${rupiah(item.amount)}</td>
-      <td>${formatDateTime(item.createdAt)}</td>
-      <td><span class="badge ${item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending'}">${item.status}</span></td>
-      <td><button class="btn btn-secondary btn-sm" data-review="${item.uid}|${item.id}">Tinjau</button></td>
+      <td data-label="Peserta"><strong>${item.participantName || '-'}</strong><small>${item.participantEmail || ''}</small></td>
+      <td data-label="Pengirim"><strong>${item.senderName}</strong><small>${item.senderBank}</small></td>
+      <td data-label="Jumlah">${rupiah(item.amount)}</td>
+      <td data-label="Waktu">${formatDateTime(item.createdAt)}</td>
+      <td data-label="Status"><span class="badge ${item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending'}">${item.status === 'approved' ? 'Disetujui' : item.status === 'rejected' ? 'Ditolak' : 'Menunggu'}</span></td>
+      <td data-label="Aksi"><button class="btn btn-secondary btn-sm" data-review="${item.uid}|${item.id}">Tinjau</button></td>
     </tr>`).join('');
   tbody.querySelectorAll('[data-review]').forEach(btn=> btn.addEventListener('click', ()=> openPayment(btn.dataset.review)));
 }
@@ -94,12 +94,12 @@ function renderParticipants(){
     const latestResult = state.results.filter(r=>r.uid===p.uid).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
     const approved = state.payments.some(pay=> pay.uid===p.uid && pay.status === 'approved');
     return `<tr>
-      <td><strong>${p.name || '-'}</strong><small>${p.email || ''}</small></td>
-      <td>${p.className || '-'}</td>
-      <td>${p.school || '-'}</td>
-      <td><span class="badge ${approved ? 'approved' : 'pending'}">${approved ? 'Aktif' : 'Belum aktif'}</span></td>
-      <td>${latestResult?.recommendations?.[0]?.cluster || '-'}</td>
-      <td>${formatDateTime(latestResult?.createdAt)}</td>
+      <td data-label="Nama"><strong>${p.name || '-'}</strong><small>${p.email || ''}</small></td>
+      <td data-label="Kelas">${p.className || '-'}</td>
+      <td data-label="Asal">${p.school || '-'}</td>
+      <td data-label="Akses"><span class="badge ${approved ? 'approved' : 'pending'}">${approved ? 'Aktif' : 'Belum aktif'}</span></td>
+      <td data-label="Hasil">${latestResult?.recommendations?.[0]?.cluster || '-'}</td>
+      <td data-label="Tes terakhir">${formatDateTime(latestResult?.createdAt)}</td>
     </tr>`;
   }).join('');
 }

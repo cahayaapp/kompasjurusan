@@ -1,7 +1,7 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
 import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
 import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
-import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, readFileAsDataUrl, listen } from './common.js';
+import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
   user: null,
@@ -61,7 +61,14 @@ function renderHome(){
   document.getElementById('homePaymentPrice').textContent = rupiah(state.settings.price);
   const wrap = document.getElementById('latestResultWrap');
   if(!state.results[0]){
-    wrap.innerHTML = `<div class="poster-widget"><h3>Jangan pilih jurusan hanya karena <span>ikut arus.</span></h3><p style="color:#dff8f4;line-height:1.7">Kerjakan asesmen untuk membaca minat RIASEC, kekuatan akademik, nilai hidup, dan gaya kerja secara lebih utuh.</p><div class="poster-phone"><div class="mock-phone"><div class="mock-notch"></div><div class="mock-card teal"><h4>Perjalananmu menuju arah yang tepat</h4><p>108 butir terpadu · satu pernyataan per layar.</p></div><div class="mock-card"><h4>Kompas Jurusan</h4><p>Setelah akses aktif, kamu bisa tes ulang berkali-kali.</p></div></div><div class="poster-kpi"><div class="kpi-box"><b>${rupiah(state.settings.price)}</b><small>Sekali bayar, tes ulang berkali-kali.</small></div><div class="kpi-box"><b>4 Dimensi</b><small>Minat, akademik, nilai hidup, dan gaya kerja.</small></div></div></div></div>`;
+    wrap.innerHTML = `<div class="card">
+      <div class="panel-header"><div><h3>Belum ada hasil tes</h3><p>Hasil pertama akan muncul setelah kamu menyelesaikan seluruh asesmen.</p></div><span class="badge info">108 butir</span></div>
+      <div class="reco-list">
+        <div class="reco-card"><b>🎯 Hasil personal</b><small>Rumpun studi dan contoh jurusan disusun dari kombinasi beberapa dimensi dirimu.</small></div>
+        <div class="reco-card"><b>📊 Mudah dibaca</b><small>Profil RIASEC, kekuatan akademik, nilai hidup, dan gaya kerja diringkas tanpa angka rumit.</small></div>
+        <div class="reco-card"><b>🔁 Bisa dibandingkan</b><small>Setelah akses aktif, kamu dapat tes ulang dan melihat perubahan hasil dari waktu ke waktu.</small></div>
+      </div>
+    </div>`;
     return;
   }
   wrap.innerHTML = renderResultCard(state.results[0], true);
@@ -117,7 +124,7 @@ document.getElementById('paymentForm')?.addEventListener('submit', async e=>{
     const senderBank = document.getElementById('senderBank').value.trim();
     const file = document.getElementById('paymentProof').files[0];
     if(!senderName || !senderBank || !file) throw new Error('Lengkapi nama pengirim, nama bank, dan bukti transfer.');
-    const proofDataUrl = await readFileAsDataUrl(file);
+    const proofDataUrl = await compressImage(file, 1200, .78);
     const itemRef = push(dbRefs.paymentRoot(state.user.uid));
     await set(itemRef, {
       senderName, senderBank, amount: state.settings.price, proofDataUrl,

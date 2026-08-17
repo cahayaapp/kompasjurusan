@@ -29,6 +29,29 @@ export function readFileAsDataUrl(file){
   });
 }
 
+
+export function compressImage(file, maxWidth=1200, quality=.78){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if(w>maxWidth){ h=Math.round(h*(maxWidth/w)); w=maxWidth; }
+        const canvas=document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject;
+      img.src=reader.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function listen(dbRef, cb){ return onValue(dbRef, snap => cb(snap.val())); }
 
 export function onceAuth(){

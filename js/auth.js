@@ -34,7 +34,12 @@ document.querySelectorAll('[data-brand]').forEach(renderBrand);
 
 document.querySelectorAll('[data-register-now]').forEach(btn=> btn.addEventListener('click', ()=>{
   switchMode('register');
-  document.getElementById('authBox')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  const card = document.getElementById('authCard');
+  card?.classList.remove('auth-pulse');
+  void card?.offsetWidth;
+  card?.classList.add('auth-pulse');
+  if(window.innerWidth <= 980) card?.scrollIntoView({ behavior:'smooth', block:'start' });
+  window.setTimeout(()=> els.regName?.focus(), 260);
 }));
 
 function switchMode(next){
@@ -106,11 +111,17 @@ els.authForm?.addEventListener('submit', async e=>{
         gender: '',
         createdAt: Date.now()
       });
-      await set(dbRefs.access(cred.user.uid), { paymentApproved:false });
       setMessage(els.authMsg, 'Akun berhasil dibuat. Mengarahkan ke ruang peserta...', 'success');
+      window.location.href = 'peserta.html';
+      return;
     }else{
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const snap = await get(dbRefs.user(cred.user.uid));
+      const profile = snap.val() || {};
+      if(!profile.role) throw new Error('Profil akun belum lengkap. Silakan hubungi admin.');
       setMessage(els.authMsg, 'Login berhasil. Mengarahkan...', 'success');
+      window.location.href = profile.role === 'admin' ? 'admin.html' : 'peserta.html';
+      return;
     }
   }catch(err){
     setMessage(els.authMsg, describeError(err), 'error');
@@ -128,7 +139,7 @@ async function boot(){
     if(!user) return;
     const snap = await get(dbRefs.user(user.uid));
     const profile = snap.val() || {};
-    window.location.href = profile.role === 'admin' ? 'admin.html' : 'peserta.html';
+    if(profile.role) window.location.href = profile.role === 'admin' ? 'admin.html' : 'peserta.html';
   });
 }
 

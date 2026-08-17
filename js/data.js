@@ -237,9 +237,9 @@ function makeQuestions(section, code, prompts, prefix) {
 
 export const QUESTIONS = [
   ...Object.entries(riasecPrompts).flatMap(([code, prompts], i) => makeQuestions('riasec', code, prompts, `R${i+1}`)),
-  ...Object.entries(valuesPrompts).flatMap(([code, prompts], i) => makeQuestions('values', code, prompts, `V${i+1}`)),
-  ...Object.entries(workstylePrompts).flatMap(([code, prompts], i) => makeQuestions('workstyle', code, prompts, `W${i+1}`)),
-  ...Object.entries(academicPrompts).flatMap(([code, prompts], i) => makeQuestions('academic', code, prompts, `A${i+1}`))
+  ...Object.entries(valuesPrompts).flatMap(([code, prompts], i) => makeQuestions('values', code, prompts.slice(0,4), `V${i+1}`)),
+  ...Object.entries(workstylePrompts).flatMap(([code, prompts], i) => makeQuestions('workstyle', code, prompts.slice(0,4), `W${i+1}`)),
+  ...Object.entries(academicPrompts).flatMap(([code, prompts], i) => makeQuestions('academic', code, prompts.slice(0,4), `A${i+1}`))
 ];
 
 export const MAJOR_CLUSTERS = [
