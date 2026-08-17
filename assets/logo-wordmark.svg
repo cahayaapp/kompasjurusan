@@ -1,38 +1,28 @@
-<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="860" height="220" viewBox="0 0 860 220" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="16" y1="10" x2="168" y2="170" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#20C8BE"/>
-      <stop offset="1" stop-color="#0A7F8E"/>
+    <linearGradient id="bg" x1="13" y1="10" x2="188" y2="186" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1BC0BB"/>
+      <stop offset="1" stop-color="#0A5363"/>
     </linearGradient>
-    <linearGradient id="needle" x1="66" y1="112" x2="113" y2="44" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6EF0E2"/>
-      <stop offset="0.55" stop-color="#FFD45D"/>
-      <stop offset="1" stop-color="#FFAD32"/>
+    <linearGradient id="needle" x1="72" y1="123" x2="126" y2="55" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#63E5D8"/>
+      <stop offset="0.5" stop-color="#FFE07A"/>
+      <stop offset="1" stop-color="#FF9800"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="12" width="160" height="160" rx="42" fill="url(#bg)"/>
-  <circle cx="88" cy="92" r="56" stroke="#E8FAF8" stroke-width="10" stroke-linecap="round" stroke-dasharray="215 20"/>
-  <path d="M88 28L95 44H81L88 28Z" fill="#FFD45D"/>
-  <path d="M88 156L95 140H81L88 156Z" fill="#EAF8F7"/>
-  <path d="M24 92L40 85V99L24 92Z" fill="#EAF8F7"/>
-  <path d="M152 92L136 85V99L152 92Z" fill="#EAF8F7"/>
-  <path d="M56 52C56 46.477 60.477 42 66 42H82V83L118 42H141L105 87L138 133H110L87 97L82 105V133H66C60.477 133 56 128.523 56 123V52Z" fill="#F9FFFF"/>
-  <path d="M119 58H136V120C136 139.33 123.761 151 103 151C91.746 151 82.858 148.126 76 142.5L85 128.5C90.426 132.789 96.379 135 102.5 135C112.173 135 118 129.565 118 119.5V58H119Z" fill="#E8FAF8"/>
-  <path d="M73 135L117 71L136 55L126 76L82 141L73 135Z" fill="url(#needle)"/>
-  <path d="M82 141L117 71L97 78L73 135L82 141Z" fill="#0A6370"/>
-  <circle cx="104" cy="86" r="12" fill="#0A6370"/>
-  <circle cx="104" cy="86" r="7" fill="#FFF4C7"/>
-  <g fill="#124A56">
-    <path d="M230 52H261V83L325 52H365L294 87L369 154H327L261 111V154H230V52Z"/>
-    <path d="M379 102C379 71 401 50 431 50C465 50 486 76 486 108V116H409C413 132 424 141 441 141C454 141 463 137 472 129L483 150C471 159 456 164 438 164C401 164 379 139 379 102ZM409 95H458C456 79 445 70 431 70C417 70 406 79 409 95Z"/>
-    <path d="M505 52H535V69C543 58 555 50 572 50C595 50 612 63 612 93V154H582V102C582 83 573 75 559 75C544 75 535 85 535 103V154H505V52Z"/>
-    <path d="M636 102C636 71 658 50 688 50C722 50 743 76 743 108V116H666C670 132 681 141 698 141C711 141 720 137 729 129L740 150C728 159 713 164 695 164C658 164 636 139 636 102ZM666 95H715C713 79 702 70 688 70C674 70 663 79 666 95Z"/>
-  </g>
-  <path d="M229 164H504" stroke="#17A9B3" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
-  <g fill="#19B7B2">
-    <path d="M229 163H374C390 163 402 173 402 188H380C380 182 375 178 368 178H262C255 178 250 182 250 188H228C228 173 241 163 257 163H229Z" opacity="0"/>
-  </g>
-  <text x="228" y="112" font-size="62" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#124A56">Kompas</text>
-  <text x="228" y="154" font-size="60" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#19B7B2">Jurusan</text>
-  <text x="536" y="149" font-size="18" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#6A8790" letter-spacing="3">CAHAYA ACADEMY</text>
+  <rect x="8" y="16" width="172" height="172" rx="42" fill="url(#bg)"/>
+  <circle cx="94" cy="102" r="60" stroke="#F2FCFB" stroke-width="10"/>
+  <path d="M94 33L101 49H87L94 33Z" fill="#FFCA35"/>
+  <path d="M94 171L101 155H87L94 171Z" fill="#DDF8F6"/>
+  <path d="M25 102L41 95V109L25 102Z" fill="#DDF8F6"/>
+  <path d="M163 102L147 95V109L163 102Z" fill="#DDF8F6"/>
+  <path d="M59 57C59 51.477 63.477 47 69 47H84V81L117 47H141L109 88L139 139H112L89 102L84 108V139H69C63.477 139 59 134.523 59 129V57Z" fill="#F8FEFE"/>
+  <path d="M119 63H136V118C136 136.225 124.545 149 104 149C92.557 149 83.663 145.744 76 139L85 125C91.049 129.911 97.092 132 103.5 132C113.794 132 119 126.11 119 117.5V63Z" fill="#F1FBFB"/>
+  <path d="M74 142L120 75L138 57L127 81L82 146L74 142Z" fill="url(#needle)"/>
+  <path d="M82 146L120 75L101 82L74 142L82 146Z" fill="#075063"/>
+  <circle cx="105" cy="90" r="11" fill="#075063"/>
+  <circle cx="105" cy="90" r="6" fill="#FFF3B3"/>
+  <text x="210" y="98" font-size="72" font-weight="800" fill="#F9FFFE" font-family="Inter, Arial, sans-serif">Kompas</text>
+  <text x="210" y="158" font-size="72" font-weight="800" fill="#F9FFFE" font-family="Inter, Arial, sans-serif">Jurusan</text>
+  <text x="540" y="156" font-size="22" font-weight="700" fill="#7ADFD6" letter-spacing="4" font-family="Inter, Arial, sans-serif">CAHAYA ACADEMY</text>
 </svg>

@@ -1,237 +1,261 @@
-export const RIASEC_INFO = {
-  R: { label: 'Realistic', emoji: '🛠️', desc: 'Suka hal praktis, teknis, membuat, memperbaiki, atau bekerja dengan alat dan sistem nyata.' },
-  I: { label: 'Investigative', emoji: '🔬', desc: 'Suka menganalisis, meneliti, berhitung, dan memecahkan masalah secara logis.' },
-  A: { label: 'Artistic', emoji: '🎨', desc: 'Suka mengekspresikan ide, menulis, mendesain, dan membuat karya kreatif.' },
-  S: { label: 'Social', emoji: '🤝', desc: 'Suka membantu, mengajar, membimbing, dan bekerja untuk manfaat orang lain.' },
-  E: { label: 'Enterprising', emoji: '🚀', desc: 'Suka memimpin, memengaruhi, mengorganisasi, dan menggerakkan ide menjadi aksi.' },
-  C: { label: 'Conventional', emoji: '📊', desc: 'Suka ketertiban, detail, administrasi, data, dan sistem yang rapi.' }
+export const QUESTION_SECTIONS = {
+  riasec: 'Minat RIASEC',
+  values: 'Nilai Hidup',
+  workstyle: 'Gaya Kerja',
+  academic: 'Kekuatan Akademik'
 };
 
-const riasecItems = {
+export const SCALE_LABELS = {
+  1: { title: 'Sangat tidak sesuai', desc: 'Hampir tidak menggambarkan diriku.' },
+  2: { title: 'Tidak sesuai', desc: 'Sedikit menggambarkan, tetapi tidak dominan.' },
+  3: { title: 'Cukup sesuai', desc: 'Kadang terasa cocok dalam situasi tertentu.' },
+  4: { title: 'Sesuai', desc: 'Lumayan sering menggambarkan diriku.' },
+  5: { title: 'Sangat sesuai', desc: 'Sangat menggambarkan diriku saat ini.' }
+};
+
+export const RIASEC_INFO = {
+  R: { label: 'Realistic', description: 'Suka praktik, alat, kerja nyata, dan aktivitas lapangan.' },
+  I: { label: 'Investigative', description: 'Suka analisis, riset, sains, logika, dan pemecahan masalah.' },
+  A: { label: 'Artistic', description: 'Suka kreativitas, ide, seni, ekspresi, dan desain.' },
+  S: { label: 'Social', description: 'Suka membantu, membimbing, melayani, dan berinteraksi dengan orang.' },
+  E: { label: 'Enterprising', description: 'Suka memimpin, meyakinkan, menggerakkan, dan berwirausaha.' },
+  C: { label: 'Conventional', description: 'Suka keteraturan, detail, administrasi, dan sistem yang rapi.' }
+};
+
+const riasecPrompts = {
   R: [
-    'Saya menikmati kegiatan memperbaiki alat, perangkat, atau benda yang rusak.',
-    'Saya tertarik memahami cara kerja mesin, listrik, atau peralatan teknis.',
-    'Saya lebih suka praktik langsung daripada hanya teori.',
-    'Saya nyaman mengerjakan tugas lapangan yang membutuhkan ketahanan fisik.',
-    'Saya tertarik dengan kegiatan merancang atau membuat sesuatu dari nol.',
-    'Saya senang menggunakan alat bantu, perlengkapan, atau teknologi praktis.',
-    'Saya tertarik dengan pekerjaan yang menghasilkan produk nyata.',
-    'Saya suka mempelajari proses kerja yang terstruktur dan operasional.'
+    'Aku menikmati kegiatan praktik langsung daripada hanya teori.',
+    'Aku tertarik pada alat, mesin, atau perakitan sesuatu.',
+    'Aku suka mempelajari cara kerja benda secara nyata.',
+    'Kegiatan lapangan terasa menarik bagiku.',
+    'Aku senang menyelesaikan tugas yang hasilnya terlihat jelas.',
+    'Aku nyaman belajar melalui praktik dan demonstrasi.'
   ],
   I: [
-    'Saya suka mencari penyebab mengapa suatu masalah bisa terjadi.',
-    'Saya tertarik pada eksperimen, riset, atau pengujian gagasan.',
-    'Saya senang membaca penjelasan mendalam untuk memahami suatu konsep.',
-    'Saya suka tugas yang menantang logika dan analisis saya.',
-    'Saya tertarik pada data, angka, dan pola hubungan antarinformasi.',
-    'Saya menikmati proses memecahkan masalah yang jawabannya tidak langsung terlihat.',
-    'Saya lebih puas jika dapat memahami alasan di balik suatu jawaban.',
-    'Saya tertarik pada pelajaran yang menuntut berpikir kritis.'
+    'Aku suka menganalisis penyebab suatu masalah.',
+    'Aku tertarik pada sains, penelitian, atau eksperimen.',
+    'Aku menikmati pertanyaan yang menuntut logika mendalam.',
+    'Aku senang mencari tahu mengapa sesuatu bisa terjadi.',
+    'Aku suka membaca atau meneliti topik sampai tuntas.',
+    'Aku menikmati tugas yang menantang pikiran dan penalaran.'
   ],
   A: [
-    'Saya suka menulis, membuat konten, atau menyusun ide dengan gaya saya sendiri.',
-    'Saya tertarik pada desain visual, estetika, atau penyusunan tampilan.',
-    'Saya menikmati kegiatan kreatif seperti menggambar, mengedit, atau membuat karya.',
-    'Saya suka memikirkan cara baru yang unik dalam menyampaikan sesuatu.',
-    'Saya senang jika diberi ruang untuk berekspresi dalam tugas.',
-    'Saya tertarik pada dunia komunikasi kreatif, media, atau seni.',
-    'Saya menikmati kegiatan bercerita, presentasi, atau menyusun narasi.',
-    'Saya suka jika hasil kerja saya punya sentuhan pribadi dan tidak monoton.'
+    'Aku suka menuangkan ide dengan cara yang kreatif.',
+    'Aku tertarik pada seni, desain, tulisan, atau ekspresi visual.',
+    'Aku senang membuat sesuatu yang unik dan berbeda.',
+    'Aku mudah mendapatkan ide baru untuk sebuah karya.',
+    'Aku suka kebebasan dalam mengekspresikan diri.',
+    'Aku merasa hidup saat mengerjakan hal-hal kreatif.'
   ],
   S: [
-    'Saya merasa senang ketika bisa membantu orang memahami sesuatu.',
-    'Saya tertarik menjadi pendamping, pembimbing, atau pengajar.',
-    'Saya nyaman mendengarkan cerita dan kesulitan orang lain.',
-    'Saya suka bekerja dalam peran yang bermanfaat bagi orang banyak.',
-    'Saya ingin pekerjaan saya kelak punya dampak langsung untuk sesama.',
-    'Saya suka suasana kerja yang penuh interaksi manusia.',
-    'Saya sering terdorong memberi dukungan kepada teman yang sedang kesulitan.',
-    'Saya tertarik pada dunia pendidikan, pelayanan, kesehatan, atau pengembangan manusia.'
+    'Aku suka membantu orang yang sedang mengalami kesulitan.',
+    'Aku menikmati kegiatan mengajar, membimbing, atau mendampingi.',
+    'Aku peka terhadap perasaan orang lain.',
+    'Aku senang ketika bisa membuat orang lain berkembang.',
+    'Aku merasa nyaman bekerja bersama banyak orang.',
+    'Aku tertarik pada pekerjaan yang memberi manfaat langsung bagi orang lain.'
   ],
   E: [
-    'Saya suka mengambil inisiatif ketika melihat peluang atau masalah.',
-    'Saya tertarik memimpin kegiatan, tim, atau proyek.',
-    'Saya nyaman berbicara di depan orang dan meyakinkan mereka.',
-    'Saya tertarik pada dunia bisnis, pemasaran, atau organisasi.',
-    'Saya suka menetapkan target lalu menggerakkan orang untuk mencapainya.',
-    'Saya senang ketika diberi kepercayaan mengatur sesuatu.',
-    'Saya tertarik mencari cara agar ide bisa berjalan nyata.',
-    'Saya suka tantangan yang melibatkan keberanian mengambil keputusan.'
+    'Aku suka memimpin kelompok untuk mencapai tujuan tertentu.',
+    'Aku nyaman berbicara di depan orang lain.',
+    'Aku senang memengaruhi atau meyakinkan orang tentang suatu gagasan.',
+    'Aku tertarik pada bisnis, organisasi, atau proyek yang digerakkan target.',
+    'Aku suka mengambil inisiatif daripada menunggu arahan.',
+    'Aku bersemangat ketika diberi kesempatan mengatur atau mengelola.'
   ],
   C: [
-    'Saya nyaman dengan tugas yang membutuhkan kerapian, ketelitian, dan urutan jelas.',
-    'Saya suka menyusun data, dokumen, atau informasi agar mudah dipakai.',
-    'Saya merasa tenang jika sistem kerja berjalan rapi dan teratur.',
-    'Saya tertarik pada administrasi, keuangan, atau pengelolaan data.',
-    'Saya suka membuat daftar, catatan, atau pelacakan proses.',
-    'Saya teliti ketika memeriksa kesalahan kecil dalam tugas.',
-    'Saya lebih nyaman bila target, aturan, dan prosedur dijelaskan dengan jelas.',
-    'Saya menikmati pekerjaan yang membutuhkan konsistensi dan akurasi.'
+    'Aku menyukai tugas yang rapi, sistematis, dan teratur.',
+    'Aku nyaman mengikuti prosedur yang jelas.',
+    'Aku teliti saat bekerja dengan data, angka, atau dokumen.',
+    'Aku suka membuat daftar, jadwal, atau struktur kerja.',
+    'Aku menikmati pekerjaan administrasi yang butuh ketelitian.',
+    'Aku lebih tenang jika semua hal tertata rapi.'
   ]
 };
 
-const valueItems = {
+const valuesPrompts = {
   mission: [
-    'Saya ingin kuliah yang kelak membuat saya merasa berguna bagi banyak orang.',
-    'Bagi saya, pilihan jurusan harus selaras dengan tujuan hidup yang lebih besar.',
-    'Saya ingin pekerjaan masa depan saya membawa manfaat yang nyata bagi masyarakat.',
-    'Saya mempertimbangkan jurusan dari sejauh mana ia bisa menjadi ladang kontribusi.'
+    'Aku ingin pilihan jurusanku punya makna dan manfaat yang besar.',
+    'Aku lebih tertarik pada jalan hidup yang terasa bermakna.',
+    'Aku ingin pekerjaanku nanti menjadi sarana kontribusi yang nyata.',
+    'Aku peduli pada dampak jangka panjang dari pekerjaan yang kupilih.',
+    'Aku ingin belajar di bidang yang terasa selaras dengan panggilan hidupku.',
+    'Aku mempertimbangkan nilai kebaikan saat memilih jurusan.'
   ],
   security: [
-    'Saya cenderung mempertimbangkan kestabilan masa depan saat memilih jurusan.',
-    'Saya merasa penting memilih jalur studi yang punya prospek kerja jelas.',
-    'Keamanan finansial merupakan pertimbangan penting bagi saya.',
-    'Saya menyukai jalur yang memberi kepastian dan struktur masa depan.'
+    'Aku mempertimbangkan kestabilan masa depan ketika memilih jurusan.',
+    'Aku lebih tenang jika bidang yang kupilih punya peluang kerja yang jelas.',
+    'Keamanan finansial cukup penting bagiku.',
+    'Aku memperhatikan prospek kerja saat menimbang pilihan studi.',
+    'Aku tidak ingin mengambil pilihan yang terlalu berisiko.',
+    'Aku cenderung memilih jalur yang aman dan realistis.'
   ],
   growth: [
-    'Saya ingin kuliah yang menantang saya untuk terus berkembang.',
-    'Saya senang bila suatu jurusan membuat saya terus belajar hal baru.',
-    'Saya tertarik pada pilihan studi yang bisa memperluas wawasan saya.',
-    'Saya siap berjuang untuk jalur yang memberi pertumbuhan diri tinggi.'
+    'Aku ingin terus berkembang dan menantang diriku sendiri.',
+    'Aku suka bidang yang membuatku belajar hal baru terus-menerus.',
+    'Aku senang jika sebuah jurusan mendorong pertumbuhan diri.',
+    'Aku tertarik pada lingkungan belajar yang menantang.',
+    'Aku menghargai proses menjadi versi diriku yang lebih baik.',
+    'Aku menikmati kesempatan untuk memperluas wawasan.'
   ],
   flexibility: [
-    'Saya tertarik pada jalur karier yang memberi kebebasan mengatur cara bekerja.',
-    'Saya menghargai jurusan yang membuka banyak pilihan karier.',
-    'Saya suka kemungkinan bekerja lintas bidang atau peran.',
-    'Saya menyukai masa depan yang memberi ruang untuk berinovasi dan tidak kaku.'
+    'Aku menyukai kebebasan dalam mengatur cara belajar dan bekerja.',
+    'Aku lebih tertarik pada bidang yang memberi banyak pilihan jalur karier.',
+    'Aku tidak terlalu suka sistem yang kaku.',
+    'Fleksibilitas menjadi pertimbangan saat memilih jurusan.',
+    'Aku suka ruang untuk mengeksplorasi banyak kemungkinan.',
+    'Aku nyaman pada bidang yang memungkinkan variasi aktivitas.'
   ],
   impact: [
-    'Saya tertarik pada bidang yang dapat memberi pengaruh luas.',
-    'Saya senang jika karya saya nanti bisa dirasakan banyak orang.',
-    'Saya ingin bekerja di bidang yang memungkinkan saya menjadi penggerak perubahan.',
-    'Saya tertarik pada jalur studi yang bisa membuat saya hadir sebagai pemecah masalah.'
+    'Aku ingin pekerjaan yang kupilih membawa pengaruh nyata.',
+    'Aku tertarik pada jalur karier yang bisa mengubah keadaan menjadi lebih baik.',
+    'Aku ingin hasil belajarku nanti terasa berguna bagi masyarakat.',
+    'Dampak sosial dari profesi cukup penting bagiku.',
+    'Aku ingin karya atau pekerjaanku kelak terasa berarti bagi banyak orang.',
+    'Aku ingin berkontribusi pada sesuatu yang lebih besar dari diriku.'
   ],
   spirituality: [
-    'Saya ingin pilihan kuliah saya mendukung misi hidup yang bernilai dan bermakna.',
-    'Saya lebih tenang jika bidang yang saya pilih terasa selaras dengan nilai-nilai kebaikan.',
-    'Saya ingin ilmu yang saya pelajari kelak menjadi sarana ibadah dan pelayanan.',
-    'Saya mempertimbangkan lingkungan belajar yang baik bagi pertumbuhan karakter saya.'
+    'Aku ingin pilihan jurusanku selaras dengan nilai hidup dan keyakinanku.',
+    'Aku mempertimbangkan keberkahan dan arah hidup saat memilih studi.',
+    'Aku ingin menempuh jalan yang menenangkan hati dan nurani.',
+    'Nilai kebaikan dan makna batin penting dalam keputusan akademikku.',
+    'Aku ingin ilmu yang kupelajari mendekatkanku pada tujuan hidup yang lebih luhur.',
+    'Aku peduli bahwa jalan studiku tetap selaras dengan prinsip yang kupegang.'
   ]
 };
 
-const workstyleItems = {
+const workstylePrompts = {
   discipline: [
-    'Saya relatif konsisten menyelesaikan tugas sampai tuntas.',
-    'Saya cukup teratur dalam mengatur waktu dan prioritas.',
-    'Saya dapat tetap bekerja meskipun tugas terasa berat atau membosankan.'
+    'Aku mampu menyelesaikan tugas sesuai jadwal.',
+    'Aku cukup tertib dalam menjalankan tanggung jawab.',
+    'Aku berusaha konsisten meski tugas terasa tidak menarik.',
+    'Aku terbiasa membuat prioritas kerja atau belajar.',
+    'Aku cukup disiplin dalam menjaga ritme belajarku.',
+    'Aku mampu fokus sampai tugas selesai.'
   ],
   collaboration: [
-    'Saya nyaman bekerja sama dalam tim dan berbagi tanggung jawab.',
-    'Saya mampu menyesuaikan diri dengan gaya kerja orang lain.',
-    'Saya tidak kesulitan berdiskusi untuk menyatukan ide.'
+    'Aku nyaman belajar atau bekerja dalam tim.',
+    'Aku suka bertukar ide dengan orang lain.',
+    'Aku bisa bekerja sama meski pendapat kami berbeda.',
+    'Aku senang jika hasil yang baik dicapai bersama-sama.',
+    'Aku mau mendengar dan menyesuaikan diri dalam kerja kelompok.',
+    'Aku lebih bersemangat saat ada kolaborasi yang sehat.'
   ],
   leadership: [
-    'Saya cukup percaya diri memimpin tugas atau kelompok kecil.',
-    'Saya berani mengambil keputusan ketika diperlukan.',
-    'Saya mudah terdorong mengambil peran pengarah dalam sebuah kegiatan.'
+    'Aku cukup siap mengambil peran memimpin bila dibutuhkan.',
+    'Aku mampu mengarahkan teman menuju target bersama.',
+    'Aku suka memikirkan strategi agar sebuah tugas berjalan baik.',
+    'Aku nyaman menjadi penanggung jawab sebuah kegiatan.',
+    'Aku bisa membuat keputusan saat kelompok membutuhkan arah.',
+    'Aku punya dorongan untuk menggerakkan orang lain secara positif.'
   ],
   communication: [
-    'Saya bisa menyampaikan ide saya dengan cukup jelas.',
-    'Saya nyaman berbicara di depan orang atau menjelaskan sesuatu.',
-    'Saya mampu menulis atau menyusun pesan dengan terstruktur.'
+    'Aku mudah menyampaikan ide secara jelas.',
+    'Aku cukup nyaman menjelaskan sesuatu kepada orang lain.',
+    'Aku mampu mengungkapkan pendapat dengan terstruktur.',
+    'Aku cukup percaya diri saat berbicara di forum kecil maupun besar.',
+    'Aku suka berdialog dan bertanya untuk memperjelas sesuatu.',
+    'Aku mampu menyesuaikan cara komunikasi dengan lawan bicara.'
   ],
   resilience: [
-    'Ketika gagal atau salah, saya biasanya bisa bangkit dan mencoba lagi.',
-    'Saya cukup tahan menghadapi tekanan dalam tugas.',
-    'Saya tetap berusaha meski hasil awal belum sesuai harapan.'
+    'Aku tidak mudah menyerah saat menghadapi kesulitan.',
+    'Aku mampu bangkit lagi setelah gagal atau kecewa.',
+    'Aku tetap berusaha meski prosesnya panjang.',
+    'Tekanan atau tantangan justru sering membuatku belajar lebih banyak.',
+    'Aku berusaha tenang saat menghadapi hambatan.',
+    'Aku cukup tahan menghadapi proses yang tidak instan.'
   ],
   independence: [
-    'Saya dapat belajar atau bekerja mandiri tanpa harus selalu diarahkan.',
-    'Saya mampu mencari jalan keluar sendiri sebelum meminta bantuan.',
-    'Saya cukup inisiatif memulai tugas tanpa menunggu didorong terus-menerus.'
+    'Aku bisa belajar mandiri tanpa harus selalu diarahkan.',
+    'Aku mampu mengambil langkah awal sebelum diminta.',
+    'Aku cukup bertanggung jawab terhadap proses belajarku sendiri.',
+    'Aku suka mencari sumber belajar tambahan secara mandiri.',
+    'Aku bisa mengatur diri ketika bekerja sendiri.',
+    'Aku tidak terlalu bergantung pada dorongan orang lain untuk memulai.'
   ]
 };
 
-const academicItems = {
+const academicPrompts = {
   numerik: [
-    'Saya cukup kuat dalam memahami angka, hitungan, atau pola numerik.',
-    'Saya relatif mudah memahami soal yang melibatkan perbandingan atau logika angka.',
-    'Saya merasa nyaman dengan pelajaran atau tugas yang membutuhkan perhitungan.'
+    'Aku cukup nyaman bekerja dengan angka dan hitungan.',
+    'Aku bisa memahami pola dalam data atau perhitungan.',
+    'Pelajaran yang berhubungan dengan angka terasa cukup bisa kuikuti.',
+    'Aku menikmati tantangan soal yang membutuhkan hitungan.',
+    'Aku relatif teliti saat mengerjakan soal numerik.',
+    'Aku tertarik mempelajari logika angka dan kuantitatif.'
   ],
   verbal: [
-    'Saya cukup mudah memahami bacaan dan menangkap inti pembahasan.',
-    'Saya relatif kuat menyusun kata, kalimat, atau penjelasan tertulis.',
-    'Saya nyaman mempelajari materi melalui membaca dan memahami konsepnya.'
+    'Aku cukup mudah memahami bacaan atau penjelasan tertulis.',
+    'Aku suka merangkai kata atau menyusun penjelasan.',
+    'Aku mampu menangkap ide utama dari sebuah teks.',
+    'Aku menikmati diskusi, membaca, atau menulis.',
+    'Aku cukup baik dalam menjelaskan sesuatu dengan kata-kata.',
+    'Aku merasa kuat dalam pemahaman bahasa.'
   ],
   logika: [
-    'Saya suka menyusun alasan yang runtut untuk mengambil kesimpulan.',
-    'Saya cukup baik melihat hubungan sebab-akibat dalam suatu persoalan.',
-    'Saya relatif cepat mengenali pola dalam sebuah masalah.'
+    'Aku suka memecahkan soal dengan langkah berpikir runtut.',
+    'Aku bisa melihat hubungan sebab-akibat dengan cukup baik.',
+    'Aku menikmati teka-teki, pola, atau soal penalaran.',
+    'Aku berusaha mencari alasan yang masuk akal sebelum mengambil kesimpulan.',
+    'Aku cukup kuat dalam berpikir sistematis.',
+    'Aku suka menyusun argumen yang logis.'
   ],
   sosial: [
-    'Saya cukup peka memahami perilaku, kebutuhan, atau perasaan orang lain.',
-    'Saya bisa membaca dinamika kelompok dan hubungan antarmanusia dengan cukup baik.',
-    'Saya tertarik memahami bagaimana manusia belajar, berpikir, atau berinteraksi.'
+    'Aku mudah memahami situasi sosial di sekitarku.',
+    'Aku dapat membaca kebutuhan atau reaksi orang lain dengan cukup baik.',
+    'Aku cukup cepat menyesuaikan diri dalam lingkungan sosial.',
+    'Aku peka terhadap dinamika kelompok.',
+    'Aku punya kemampuan membangun relasi yang hangat.',
+    'Aku cukup baik memahami orang melalui interaksi.'
   ],
   digital: [
-    'Saya cukup cepat beradaptasi dengan aplikasi, sistem, atau perangkat digital baru.',
-    'Saya tertarik mengeksplorasi teknologi untuk mempermudah pekerjaan.',
-    'Saya nyaman bekerja menggunakan media digital atau platform daring.'
+    'Aku tertarik pada teknologi, aplikasi, atau perangkat digital.',
+    'Aku cepat belajar menggunakan alat atau platform digital baru.',
+    'Aku suka mencari solusi dengan bantuan teknologi.',
+    'Aku merasa cukup nyaman dengan dunia komputer atau internet.',
+    'Aku tertarik mengeksplorasi cara kerja aplikasi atau sistem.',
+    'Aku cukup mudah beradaptasi pada perkembangan teknologi.'
   ],
   visual: [
-    'Saya cukup baik memahami tampilan visual, diagram, atau susunan ruang.',
-    'Saya mudah melihat ketidaksesuaian tata letak atau detail visual.',
-    'Saya tertarik pada kegiatan yang melibatkan visualisasi atau penyajian tampilan.'
+    'Aku mudah memahami informasi melalui gambar, diagram, atau tampilan visual.',
+    'Aku cukup peka terhadap bentuk, warna, dan tata letak.',
+    'Aku suka membuat ringkasan visual atau skema.',
+    'Aku lebih cepat paham bila sesuatu ditunjukkan secara visual.',
+    'Aku tertarik pada hal-hal yang berhubungan dengan desain atau presentasi visual.',
+    'Aku mampu melihat detail visual dengan cukup baik.'
   ]
 };
 
-const scaleLabels = {
-  1: { title: 'Sangat tidak sesuai', desc: 'Hampir tidak menggambarkan diriku.' },
-  2: { title: 'Kurang sesuai', desc: 'Kadang sedikit, tetapi tidak dominan.' },
-  3: { title: 'Cukup sesuai', desc: 'Lumayan menggambarkan diriku.' },
-  4: { title: 'Sesuai', desc: 'Sering menggambarkan diriku.' },
-  5: { title: 'Sangat sesuai', desc: 'Sangat kuat menggambarkan diriku.' }
-};
-
-function makeSection(domainKey, title, items, code, startIndex = 1){
-  return items.map((text, idx) => ({
-    id: `${domainKey}-${code}-${idx + startIndex}`,
-    section: domainKey,
+function makeQuestions(section, code, prompts, prefix) {
+  return prompts.map((prompt, idx) => ({
+    id: `${prefix}${String(idx + 1).padStart(2, '0')}`,
+    section,
     code,
-    title,
-    prompt: text
+    prompt
   }));
 }
 
-let questions = [];
-Object.entries(riasecItems).forEach(([code, items]) => {
-  questions.push(...makeSection('riasec', 'Minat dan kecenderungan', items, code));
-});
-Object.entries(valueItems).forEach(([code, items]) => {
-  questions.push(...makeSection('values', 'Nilai hidup', items, code));
-});
-Object.entries(workstyleItems).forEach(([code, items]) => {
-  questions.push(...makeSection('workstyle', 'Gaya kerja', items, code));
-});
-Object.entries(academicItems).forEach(([code, items]) => {
-  questions.push(...makeSection('academic', 'Kekuatan akademik', items, code));
-});
-
-export const QUESTION_SECTIONS = {
-  riasec: 'Minat dan kecenderungan',
-  values: 'Nilai hidup',
-  workstyle: 'Gaya kerja',
-  academic: 'Kekuatan akademik'
-};
-
-export { questions as QUESTIONS, scaleLabels as SCALE_LABELS };
+export const QUESTIONS = [
+  ...Object.entries(riasecPrompts).flatMap(([code, prompts], i) => makeQuestions('riasec', code, prompts, `R${i+1}`)),
+  ...Object.entries(valuesPrompts).flatMap(([code, prompts], i) => makeQuestions('values', code, prompts, `V${i+1}`)),
+  ...Object.entries(workstylePrompts).flatMap(([code, prompts], i) => makeQuestions('workstyle', code, prompts, `W${i+1}`)),
+  ...Object.entries(academicPrompts).flatMap(([code, prompts], i) => makeQuestions('academic', code, prompts, `A${i+1}`))
+];
 
 export const MAJOR_CLUSTERS = [
-  { key:'technology', name:'Teknologi & Rekayasa', majors:['Informatika','Sistem Informasi','Teknik Industri','Teknik Elektro'], weights:{ I:1.1, R:1.0, C:.9, digital:1.0, logika:1.0, numerik:.85, discipline:.75, growth:.45, security:.2 } },
-  { key:'science', name:'Sains & Kesehatan', majors:['Kedokteran','Farmasi','Biologi','Gizi'], weights:{ I:1.05, S:.65, numerik:.6, logika:.9, mission:.5, impact:.5, resilience:.45, discipline:.55 } },
-  { key:'business', name:'Bisnis & Manajemen', majors:['Manajemen','Akuntansi','Bisnis Digital','Kewirausahaan'], weights:{ E:1.0, C:.75, communication:.7, leadership:.8, security:.45, impact:.35, flexibility:.3 } },
-  { key:'education', name:'Pendidikan & Pelayanan Manusia', majors:['Pendidikan','Psikologi','Bimbingan Konseling','Ilmu Keperawatan'], weights:{ S:1.1, verbal:.7, sosial:1.0, mission:.8, spirituality:.55, collaboration:.45, communication:.55 } },
-  { key:'communication', name:'Komunikasi & Industri Kreatif', majors:['Ilmu Komunikasi','Desain Komunikasi Visual','Sastra','Broadcasting'], weights:{ A:1.0, E:.45, verbal:.75, visual:.75, communication:.7, flexibility:.45, impact:.25 } },
-  { key:'public', name:'Sosial, Hukum & Kepemimpinan Publik', majors:['Hukum','Ilmu Politik','Hubungan Internasional','Administrasi Publik'], weights:{ E:.85, S:.55, verbal:.75, logika:.7, leadership:.7, impact:.55, mission:.35 } },
-  { key:'islamic', name:'Keislaman & Pemberdayaan Umat', majors:['Pendidikan Agama Islam','Ekonomi Syariah','Komunikasi Penyiaran Islam','Hukum Keluarga Islam'], weights:{ S:.75, E:.35, verbal:.6, mission:.9, spirituality:1.0, impact:.5, communication:.4 } },
-  { key:'environment', name:'Lingkungan, Pertanian & Sumber Daya', majors:['Agroteknologi','Kehutanan','Peternakan','Perikanan'], weights:{ R:.95, I:.7, mission:.35, impact:.45, resilience:.5, discipline:.5, growth:.25 } }
+  { name: 'Sains & Teknologi', majors: ['Teknik Informatika', 'Data Science', 'Statistika', 'Teknik Industri', 'Sistem Informasi'], weights: { I: .28, R: .12, numerik: .18, logika: .18, digital: .16, discipline: .08 } },
+  { name: 'Kesehatan', majors: ['Kedokteran', 'Farmasi', 'Keperawatan', 'Gizi', 'Kesehatan Masyarakat'], weights: { I: .22, S: .16, sosial: .12, numerik: .12, resilience: .1, mission: .12, spirituality: .08, discipline: .08 } },
+  { name: 'Pendidikan & Humaniora', majors: ['Pendidikan', 'Bahasa', 'Sejarah', 'Sastra', 'Bimbingan Konseling'], weights: { S: .24, A: .1, verbal: .18, communication: .14, mission: .12, growth: .08, collaboration: .08, sosial: .06 } },
+  { name: 'Bisnis & Manajemen', majors: ['Manajemen', 'Bisnis Digital', 'Akuntansi', 'Kewirausahaan', 'Administrasi Bisnis'], weights: { E: .24, C: .1, numerik: .12, leadership: .14, communication: .12, security: .1, impact: .08, discipline: .1 } },
+  { name: 'Psikologi & Sosial', majors: ['Psikologi', 'Sosiologi', 'Ilmu Komunikasi', 'Pekerjaan Sosial', 'Hubungan Internasional'], weights: { S: .2, I: .1, verbal: .12, sosial: .18, communication: .12, impact: .1, mission: .1, collaboration: .08 } },
+  { name: 'Seni & Industri Kreatif', majors: ['Desain Komunikasi Visual', 'Arsitektur', 'Film', 'Seni Musik', 'Fashion Design'], weights: { A: .28, visual: .18, verbal: .08, flexibility: .1, growth: .1, independence: .08, communication: .08, workstyle: .1 } }
 ];
 
 export function defaultPublicSettings(){
   return {
     price: 59000,
-    bankName: 'Bank Syariah Indonesia',
-    accountNumber: '0000000000',
+    bankName: 'BSI',
+    accountNumber: '1234567890',
     accountName: 'Kompas Jurusan Cahaya'
   };
 }

@@ -1,54 +1,42 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false,
-
     "users": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin')",
-        ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'admin' || (auth.uid === $uid && (!data.exists() ? newData.child('role').val() === 'participant' : data.child('role').val() === newData.child('role').val())))"
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
       }
     },
-
     "settings": {
       "public": {
         ".read": true,
-        ".write": "auth != null && root.child('users/' + auth.uid + '/role').val() === 'admin'"
-      },
-      "admin": {
-        ".read": "auth != null && root.child('users/' + auth.uid + '/role').val() === 'admin'",
-        ".write": "auth != null && root.child('users/' + auth.uid + '/role').val() === 'admin'"
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     },
-
     "payments": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin')",
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         "$paymentId": {
-          ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'admin' || auth.uid === $uid)"
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
         }
       }
     },
-
     "access": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin')",
-        ".write": "auth != null && root.child('users/' + auth.uid + '/role').val() === 'admin'"
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     },
-
     "drafts": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin')",
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
-
     "results": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin')",
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         "$resultId": {
-          ".write": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin')"
+          ".write": "auth != null && auth.uid === $uid"
         }
       }
     }

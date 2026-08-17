@@ -1,112 +1,101 @@
 import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js';
 
-function sumByCode(answers, section){
-  const result = {};
-  QUESTIONS.filter(q => q.section === section).forEach(q=>{
-    const score = Number(answers[q.id] || 0);
-    result[q.code] = (result[q.code] || 0) + score;
+const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : 0;
+
+function groupedScores(answers) {
+  const buckets = {};
+  QUESTIONS.forEach(q => {
+    const val = Number(answers?.[q.id] || 0);
+    if(!val) return;
+    const key = `${q.section}:${q.code}`;
+    (buckets[key] ||= []).push(val);
   });
+  const result = {};
+  Object.entries(buckets).forEach(([key, vals]) => result[key] = avg(vals));
   return result;
 }
 
-function normalize(map){
-  const values = Object.values(map);
-  const max = Math.max(...values, 1);
-  return Object.fromEntries(Object.entries(map).map(([k,v])=>[k, Math.round((v/max)*100)]));
+function normalize(score){
+  return Math.round((score / 5) * 100);
 }
 
-export function buildResult(profile, answers){
-  const riasecRaw = sumByCode(answers, 'riasec');
-  const valuesRaw = sumByCode(answers, 'values');
-  const workRaw = sumByCode(answers, 'workstyle');
-  const academicRaw = sumByCode(answers, 'academic');
+export function computeAssessmentResult(answers, profile={}){
+  const grouped = groupedScores(answers);
+  const riasecRaw = Object.keys(RIASEC_INFO).map(code => ({
+    code,
+    label: RIASEC_INFO[code].label,
+    score: grouped[`riasec:${code}`] || 0,
+    percent: normalize(grouped[`riasec:${code}`] || 0),
+    description: RIASEC_INFO[code].description
+  })).sort((a,b)=>b.score-a.score);
 
-  const riasec = normalize(riasecRaw);
-  const values = normalize(valuesRaw);
-  const workstyle = normalize(workRaw);
-  const academic = normalize(academicRaw);
+  const academic = ['numerik','verbal','logika','sosial','digital','visual'].map(code=>({ code, score: grouped[`academic:${code}`]||0, percent: normalize(grouped[`academic:${code}`]||0) })).sort((a,b)=>b.score-a.score);
+  const values = ['mission','security','growth','flexibility','impact','spirituality'].map(code=>({ code, score: grouped[`values:${code}`]||0, percent: normalize(grouped[`values:${code}`]||0) })).sort((a,b)=>b.score-a.score);
+  const workstyle = ['discipline','collaboration','leadership','communication','resilience','independence'].map(code=>({ code, score: grouped[`workstyle:${code}`]||0, percent: normalize(grouped[`workstyle:${code}`]||0) })).sort((a,b)=>b.score-a.score);
 
-  const merged = { ...riasec, ...values, ...workstyle, ...academic };
-  const topRiasec = Object.entries(riasec).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>({ code:k, score:v, ...RIASEC_INFO[k] }));
+  const topRiasec = riasecRaw.slice(0,3);
+  const summaryScores = {};
+  riasecRaw.forEach(x=> summaryScores[x.code] = x.score);
+  academic.forEach(x=> summaryScores[x.code] = x.score);
+  values.forEach(x=> summaryScores[x.code] = x.score);
+  workstyle.forEach(x=> summaryScores[x.code] = x.score);
+  summaryScores.workstyle = avg(workstyle.map(x=>x.score));
 
-  const clusterScores = MAJOR_CLUSTERS.map(cluster=>{
+  const recommendations = MAJOR_CLUSTERS.map(cluster => {
+    let score = 0;
     let total = 0;
-    let weightTotal = 0;
-    Object.entries(cluster.weights).forEach(([metric, weight])=>{
-      total += (merged[metric] || 0) * weight;
-      weightTotal += 100 * weight;
+    Object.entries(cluster.weights).forEach(([key, weight]) => {
+      score += (summaryScores[key] || 0) * weight;
+      total += weight * 5;
     });
-    const score = Math.round((total / (weightTotal || 1)) * 100);
+    const percent = Math.round((score / total) * 100);
     return {
-      ...cluster,
-      score,
-      reasons: buildReasons(cluster, topRiasec, academic, values, workstyle)
-    };
-  }).sort((a,b)=>b.score-a.score);
-
-  const recommendations = clusterScores.slice(0,5).map((cluster, idx)=>(
-    {
-      rank: idx + 1,
       cluster: cluster.name,
-      score: cluster.score,
       majors: cluster.majors,
-      reasons: cluster.reasons
-    }
-  ));
-
-  const confidence = Math.round((
-    average(Object.values(riasec)) * 0.35 +
-    average(Object.values(academic)) * 0.25 +
-    average(Object.values(workstyle)) * 0.20 +
-    average(Object.values(values)) * 0.20
-  ));
-
-  const summary = buildSummary(topRiasec, recommendations[0], profile);
+      percent,
+      reasons: buildReasons(cluster.name, topRiasec, academic, values, workstyle)
+    };
+  }).sort((a,b)=>b.percent-a.percent).slice(0,4);
 
   return {
+    participant: {
+      name: profile.name || '-',
+      className: profile.className || '-',
+      school: profile.school || '-',
+      gender: profile.gender || '-'
+    },
     topRiasec,
-    riasec,
+    riasecChart: riasecRaw,
+    academic,
     values,
     workstyle,
-    academic,
     recommendations,
-    confidence,
-    summary,
-    createdAt: Date.now(),
-    participant: {
-      uid: profile.uid,
-      name: profile.name,
-      className: profile.className || '',
-      school: profile.school || '',
-      gender: profile.gender || ''
-    }
+    summaryNarrative: makeNarrative(topRiasec, academic, values, workstyle, recommendations),
+    completedItems: Object.keys(answers || {}).length,
+    createdAt: Date.now()
   };
 }
 
-function average(arr){ return Math.round(arr.reduce((a,b)=>a+b,0)/(arr.length || 1)); }
-
-function buildReasons(cluster, topRiasec, academic, values, workstyle){
-  const riasecText = topRiasec.slice(0,2).map(item=>item.label).join(' dan ');
-  const topAcademic = Object.entries(academic).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'logika';
-  const topValue = Object.entries(values).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'mission';
-  const topWork = Object.entries(workstyle).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'discipline';
+function buildReasons(clusterName, topRiasec, academic, values, workstyle){
   return [
-    `Kecenderungan utama kamu saat ini mengarah pada ${riasecText}.`,
-    `Kekuatan pendukung yang menonjol terlihat pada area ${toLabel(topAcademic)}.`,
-    `Pilihan ini juga selaras dengan nilai hidup dominanmu pada aspek ${toLabel(topValue)} dan gaya kerja ${toLabel(topWork)}.`
+    `Profil RIASEC-mu cenderung ${topRiasec.map(x=>x.label).join(', ')}.`,
+    `Kekuatan akademik yang cukup menonjol: ${academic.slice(0,2).map(x=>labelAcademic(x.code)).join(' dan ')}.`,
+    `Nilai hidup yang paling kuat: ${values.slice(0,2).map(x=>labelValue(x.code)).join(' dan ')}.`,
+    `Cara kerja yang menonjol: ${workstyle.slice(0,2).map(x=>labelWorkstyle(x.code)).join(' dan ')}.`,
+    `Karena itu, rumpun ${clusterName} layak menjadi salah satu arah eksplorasi utama.`
   ];
 }
 
-function buildSummary(topRiasec, recommendation, profile){
-  const names = topRiasec.map(v=>v.label).join(', ');
-  return `${profile.name || 'Peserta'} menunjukkan kecenderungan kuat pada profil ${names}. Berdasarkan kombinasi minat, nilai hidup, gaya kerja, dan kekuatan akademik, rumpun ${recommendation.cluster} menjadi area eksplorasi paling menonjol saat ini.`;
+function makeNarrative(topRiasec, academic, values, workstyle, recommendations){
+  return `Profilmu menunjukkan kecenderungan kuat pada ${topRiasec.map(x=>x.label).join(', ')}. Pada sisi akademik, kekuatanmu terlihat pada ${academic.slice(0,2).map(x=>labelAcademic(x.code)).join(' dan ')}. Nilai hidup yang menonjol adalah ${values.slice(0,2).map(x=>labelValue(x.code)).join(' dan ')}, sementara gaya kerjamu cenderung ${workstyle.slice(0,2).map(x=>labelWorkstyle(x.code)).join(' dan ')}. Berdasarkan pola ini, rumpun studi yang paling layak kamu eksplorasi terlebih dahulu adalah ${recommendations.slice(0,2).map(x=>x.cluster).join(' serta ')}.`;
 }
 
-function toLabel(key){
-  const map = {
-    numerik:'numerik', verbal:'verbal', logika:'logika', sosial:'sosial', digital:'digital', visual:'visual',
-    mission:'misi hidup', security:'keamanan masa depan', growth:'pertumbuhan diri', flexibility:'fleksibilitas', impact:'dampak', spirituality:'nilai dan makna',
-    discipline:'disiplin', collaboration:'kolaborasi', leadership:'kepemimpinan', communication:'komunikasi', resilience:'daya juang', independence:'kemandirian'
-  };
-  return map[key] || key;
+export function labelAcademic(code){
+  return ({ numerik:'numerik', verbal:'verbal', logika:'logika', sosial:'pemahaman sosial', digital:'teknologi digital', visual:'visual-spasial' })[code] || code;
+}
+export function labelValue(code){
+  return ({ mission:'makna dan misi hidup', security:'keamanan masa depan', growth:'pertumbuhan diri', flexibility:'fleksibilitas', impact:'dampak sosial', spirituality:'keselarasan nilai dan spiritualitas' })[code] || code;
+}
+export function labelWorkstyle(code){
+  return ({ discipline:'disiplin', collaboration:'kolaborasi', leadership:'kepemimpinan', communication:'komunikasi', resilience:'daya juang', independence:'kemandirian' })[code] || code;
 }

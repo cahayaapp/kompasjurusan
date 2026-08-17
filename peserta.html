@@ -3,163 +3,116 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Ruang Peserta — Kompas Jurusan Cahaya</title>
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <title>Kompas Jurusan — Dashboard Peserta</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="peserta.html" data-brand></a>
+      <a href="peserta.html" class="brand" data-brand></a>
       <div class="sidebar-card user-card">
         <div class="avatar" data-user-initials>U</div>
         <div class="user-meta"><b data-user-name>Peserta</b><small data-user-email>-</small></div>
       </div>
       <nav class="side-nav">
-        <button class="active" type="button" data-section-target="section-home"><span class="nav-icon">🏠</span>Beranda</button>
-        <button type="button" data-section-target="section-payment"><span class="nav-icon">💳</span>Pembayaran</button>
-        <button type="button" data-section-target="section-assessment"><span class="nav-icon">🧭</span>Asesmen</button>
-        <button type="button" data-section-target="section-results"><span class="nav-icon">📊</span>Hasil</button>
-        <button type="button" data-section-target="section-profile"><span class="nav-icon">👤</span>Profil</button>
+        <button class="active" data-section-target="section-home"><span class="nav-icon">🏠</span>Beranda</button>
+        <button data-section-target="section-payment"><span class="nav-icon">💳</span>Pembayaran</button>
+        <button data-section-target="section-assessment"><span class="nav-icon">🧭</span>Asesmen</button>
+        <button data-section-target="section-results"><span class="nav-icon">📊</span>Hasil Tes</button>
+        <button data-section-target="section-profile"><span class="nav-icon">👤</span>Profil</button>
       </nav>
       <div class="sidebar-foot">
-        <div class="sidebar-card"><small style="color:var(--text-soft);line-height:1.8">Akses penuh satu kali bayar, lalu peserta dapat tes ulang berkali-kali.</small></div>
-        <button id="logoutBtn" class="btn btn-secondary btn-block" type="button">Keluar</button>
+        <button class="btn btn-secondary btn-block" id="logoutBtn" type="button">Keluar</button>
       </div>
     </aside>
 
-    <aside class="mobile-panel" id="mobilePanel">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-        <a class="brand" href="peserta.html" data-brand></a>
-        <button class="icon-btn" id="closeMobilePanel" type="button">×</button>
-      </div>
-      <div class="sidebar-card user-card">
-        <div class="avatar" data-user-initials>U</div>
-        <div class="user-meta"><b data-user-name>Peserta</b><small data-user-email>-</small></div>
-      </div>
+    <div class="mobile-panel" id="mobilePanel">
+      <a href="peserta.html" class="brand" data-brand></a>
+      <div class="sidebar-card user-card"><div class="avatar" data-user-initials>U</div><div class="user-meta"><b data-user-name>Peserta</b><small data-user-email>-</small></div></div>
       <nav class="side-nav">
-        <button class="active" type="button" data-section-target="section-home"><span class="nav-icon">🏠</span>Beranda</button>
-        <button type="button" data-section-target="section-payment"><span class="nav-icon">💳</span>Pembayaran</button>
-        <button type="button" data-section-target="section-assessment"><span class="nav-icon">🧭</span>Asesmen</button>
-        <button type="button" data-section-target="section-results"><span class="nav-icon">📊</span>Hasil</button>
-        <button type="button" data-section-target="section-profile"><span class="nav-icon">👤</span>Profil</button>
+        <button class="active" data-section-target="section-home"><span class="nav-icon">🏠</span>Beranda</button>
+        <button data-section-target="section-payment"><span class="nav-icon">💳</span>Pembayaran</button>
+        <button data-section-target="section-assessment"><span class="nav-icon">🧭</span>Asesmen</button>
+        <button data-section-target="section-results"><span class="nav-icon">📊</span>Hasil Tes</button>
+        <button data-section-target="section-profile"><span class="nav-icon">👤</span>Profil</button>
       </nav>
-      <button id="logoutBtnMobile" class="btn btn-secondary btn-block" type="button">Keluar</button>
-    </aside>
+      <button class="btn btn-secondary" id="closeMobilePanel" type="button">Tutup menu</button>
+      <button class="btn btn-primary" id="logoutBtnMobile" type="button">Keluar</button>
+    </div>
 
     <main class="main-area">
-      <div class="mobile-topbar">
-        <button class="btn btn-secondary btn-sm" id="mobileMenuBtn" type="button">☰ Menu</button>
-        <span class="chip">Ruang Peserta</span>
-      </div>
+      <div class="mobile-topbar"><button class="btn btn-secondary btn-sm" id="mobileMenuBtn" type="button">☰ Menu</button><a href="peserta.html" class="brand" data-brand></a></div>
 
-      <section id="section-home" class="section active">
-        <div class="topbar">
-          <div class="page-title"><h1>Selamat datang, <span data-user-name>Peserta</span></h1><p>Kelola akses, lanjutkan asesmen, dan lihat hasil perkembangan arah studimu dari satu tempat.</p></div>
-          <div class="inline-actions"><button class="btn btn-primary" id="startAssessmentBtn" type="button">Mulai / Lanjutkan Asesmen</button></div>
-        </div>
+      <section class="section active" id="section-home">
+        <div class="topbar"><div class="page-title"><h1>Halo, <span data-user-name>Peserta</span> 👋</h1><p>Selamat datang di Kompas Jurusan. Pantau akses, progres asesmen, dan hasil terbaru dari satu dashboard.</p></div><div class="inline-actions"><button class="btn btn-primary" id="startAssessmentBtn" type="button">Mulai asesmen</button></div></div>
         <div class="stats-grid">
-          <article class="stat-card"><div class="label">Status akses</div><b id="homeAccess"><span class="badge info">-</span></b><small>Aktivasi berlangsung setelah pembayaran diverifikasi.</small></article>
-          <article class="stat-card"><div class="label">Progres asesmen</div><b id="homeDraft"><span class="badge info">-</span></b><small>Pengerjaan akan otomatis tersimpan.</small></article>
-          <article class="stat-card"><div class="label">Hasil terbaru</div><b id="homeLatest"><span class="badge info">-</span></b><small>Laporan dapat ditinjau ulang kapan saja.</small></article>
-          <article class="stat-card"><div class="label">Harga akses</div><b id="homePaymentPrice">Rp59.000</b><small>Sekali bayar untuk tes ulang berkali-kali.</small></article>
+          <div class="stat-card"><div class="label">Status akses</div><b id="homeAccess">-</b><small>Pembayaran satu kali membuka akses penuh.</small></div>
+          <div class="stat-card"><div class="label">Progres saat ini</div><b id="homeDraft">-</b><small>Jawaban tersimpan otomatis.</small></div>
+          <div class="stat-card"><div class="label">Hasil terbaru</div><b id="homeLatest">-</b><small>Ringkasan arah studi dan jurusan.</small></div>
+          <div class="stat-card"><div class="label">Harga akses</div><b id="homePaymentPrice">Rp59.000</b><small>Sekali bayar • tes ulang berkali-kali.</small></div>
         </div>
-        <div class="grid-2" style="margin-top:18px">
-          <div class="card">
-            <div class="panel-header"><div><h3>Apa yang kamu dapatkan?</h3><p>Asesmen ini membantu kamu tidak sekadar memilih jurusan karena ikut-ikutan.</p></div></div>
-            <div class="reco-list">
-              <div class="reco-card"><b>Empat dimensi utama</b><small>Minat RIASEC, kekuatan akademik, nilai hidup, dan gaya kerja.</small></div>
-              <div class="reco-card"><b>Hasil mudah dipahami</b><small>Rumpun studi, contoh jurusan, dan alasan yang menonjol dari profilmu.</small></div>
-              <div class="reco-card"><b>Tes ulang gratis</b><small>Ulangi asesmen setelah dirimu berkembang untuk membandingkan hasil.</small></div>
-            </div>
-          </div>
-          <div id="latestResultWrap"></div>
-        </div>
+        <div id="latestResultWrap" style="margin-top:20px"></div>
       </section>
 
-      <section id="section-payment" class="section">
-        <div class="topbar">
-          <div class="page-title"><h1>Pembayaran akses</h1><p>Upload bukti transfer untuk mengaktifkan akses penuh. Setelah aktif, kamu bisa tes ulang berkali-kali tanpa bayar lagi.</p></div>
-          <div id="paymentStatusBadge"></div>
-        </div>
+      <section class="section" id="section-payment">
+        <div class="topbar"><div class="page-title"><h1>Pembayaran</h1><p>Aktifkan akses penuh dengan mengirim bukti transfer. Setelah diverifikasi admin, kamu dapat tes ulang berkali-kali.</p></div></div>
         <div class="grid-2">
           <div class="card">
-            <div class="panel-header"><div><h3>Informasi pembayaran</h3><p>Gunakan detail berikut saat melakukan transfer.</p></div></div>
+            <div class="panel-header"><div><h3>Informasi transfer</h3><p>Silakan transfer sesuai nominal, lalu unggah bukti transfer.</p></div><div id="paymentStatusBadge"></div></div>
             <div class="reco-list">
-              <div class="reco-card"><b>Total pembayaran</b><small data-price>Rp59.000</small></div>
-              <div class="reco-card"><b>Bank tujuan</b><small id="bankNameText">-</small></div>
-              <div class="reco-card"><b>Nomor rekening</b><small id="bankAccText">-</small></div>
-              <div class="reco-card"><b>Atas nama</b><small id="bankHolderText">-</small></div>
+              <div class="reco-card"><b>Nominal</b><small data-price>Rp59.000</small></div>
+              <div class="reco-card"><b>Bank</b><small id="bankNameText">-</small></div>
+              <div class="reco-card"><b>No. Rekening</b><small id="bankAccText">-</small></div>
+              <div class="reco-card"><b>Atas Nama</b><small id="bankHolderText">-</small></div>
             </div>
-            <div id="paymentInfoBox" style="margin-top:14px"></div>
+            <div id="paymentInfoBox" style="margin-top:16px"></div>
           </div>
           <div class="card">
-            <div class="panel-header"><div><h3>Kirim bukti transfer</h3><p>Isi data pembayaran dengan lengkap agar verifikasi lebih cepat.</p></div></div>
+            <div class="panel-header"><div><h3>Upload bukti transfer</h3><p>Cukup isi nama pengirim, bank pengirim, lalu unggah screenshot/foto bukti transfer.</p></div></div>
             <form id="paymentForm">
-              <div class="field"><label for="senderName">Nama pengirim</label><div class="input-wrap"><span>👤</span><input class="input" id="senderName" placeholder="Nama pemilik rekening"></div></div>
-              <div class="field"><label for="senderBank">Nama bank</label><div class="input-wrap"><span>🏦</span><input class="input" id="senderBank" placeholder="Contoh: BSI"></div></div>
-              <div class="field"><label for="paymentProof">Upload bukti transfer</label><div class="input-wrap"><span>📎</span><input class="input" id="paymentProof" type="file" accept="image/*"></div></div>
+              <div class="field"><label for="senderName">Nama pengirim</label><input class="input" id="senderName" placeholder="Nama pada rekening pengirim"></div>
+              <div class="field"><label for="senderBank">Bank pengirim</label><input class="input" id="senderBank" placeholder="Misal: BSI / BCA / Mandiri"></div>
+              <div class="field"><label for="paymentProof">Bukti transfer</label><input class="input" id="paymentProof" type="file" accept="image/*"></div>
               <div id="paymentMsg"></div>
               <button class="btn btn-primary btn-block" type="submit">Kirim bukti transfer</button>
             </form>
           </div>
         </div>
-        <div class="card">
-          <div class="panel-header"><div><h3>Riwayat pembayaran</h3><p>Lihat seluruh pengiriman bukti transfer yang pernah kamu kirim.</p></div></div>
-          <div id="paymentHistory"></div>
-        </div>
+        <div class="card" style="margin-top:20px"><div class="panel-header"><div><h3>Riwayat pembayaran</h3></div></div><div id="paymentHistory"></div></div>
       </section>
 
-      <section id="section-assessment" class="section">
-        <div class="topbar">
-          <div class="page-title"><h1>Asesmen satu per satu</h1><p>Jawab sesuai dirimu. Satu pernyataan muncul per layar agar pengerjaan lebih fokus dan tenang.</p></div>
-          <div class="inline-actions"><span class="chip"><span id="assessmentCount">108</span> butir</span><button class="btn btn-secondary btn-sm" id="resumeAssessmentBtn" type="button">Lanjutkan progres</button></div>
-        </div>
+      <section class="section" id="section-assessment">
+        <div class="topbar"><div class="page-title"><h1>Asesmen</h1><p>Satu pernyataan per layar agar pengerjaan lebih fokus. Total <span id="assessmentCount">108</span> butir.</p></div><div class="inline-actions"><button class="btn btn-secondary" id="resumeAssessmentBtn" type="button">Muat progres</button><button class="btn btn-primary" id="startRetestBtn" type="button">Mulai dari awal</button></div></div>
         <div class="assessment-shell">
           <div class="question-card">
-            <div class="question-meta">
-              <div class="progress-wrap" style="width:100%">
-                <div class="progress-num" id="questionCount">1/108</div>
-                <div class="progress-info">
-                  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span class="question-domain" id="questionSection">Minat</span><span id="saveStateText"></span></div>
-                  <div class="progress-track"><span id="questionProgressFill" style="width:0%"></span></div>
-                </div>
-              </div>
-            </div>
+            <div class="question-meta"><div class="progress-wrap"><div class="progress-num" id="questionCount">1/108</div><div class="progress-info"><div class="question-domain" id="questionSection">Minat RIASEC</div><div class="progress-track"><span id="questionProgressFill" style="width:0%"></span></div></div></div><div id="saveStateText" class="save-indicator"><span class="dot saved"></span>Tersimpan online</div></div>
             <div id="questionArea"></div>
-            <div class="question-actions">
-              <button class="btn btn-secondary" id="prevBtn" type="button">← Sebelumnya</button>
-              <button class="btn btn-primary" id="nextBtn" type="button">Lanjutkan →</button>
-            </div>
+            <div class="question-actions"><button class="btn btn-secondary" id="prevBtn" type="button">← Sebelumnya</button><button class="btn btn-primary" id="nextBtn" type="button">Berikutnya →</button></div>
           </div>
           <div class="sidebar-note">
-            <div class="note-card"><h4>Petunjuk singkat</h4><ul><li>Jawab sesuai keadaanmu sekarang.</li><li>Tidak ada jawaban benar atau salah.</li><li>Semakin jujur, hasilnya semakin membantu.</li></ul></div>
-            <div class="note-card"><h4>Status progres</h4><p id="draftProgressText">Belum ada progres pengerjaan.</p></div>
-            <div class="note-card"><h4>Ingin mulai dari awal?</h4><p>Kamu dapat mengulang asesmen dari awal kapan saja.</p><button class="btn btn-ghost btn-block" id="startRetestBtn" type="button">Mulai dari awal</button></div>
+            <div class="note-card"><h4>Fokus satu per satu</h4><p>Jawab sesuai keadaanmu saat ini. Tidak perlu memikirkan jawaban yang “bagus”.</p></div>
+            <div class="note-card"><h4>Yang akan kamu dapatkan</h4><ul><li>Profil RIASEC dominan</li><li>Rumpun studi terkuat</li><li>Rekomendasi jurusan</li><li>Ringkasan yang siap didiskusikan</li></ul></div>
+            <div class="note-card"><h4>Progres</h4><p id="draftProgressText">Progres saat ini: 0/108 butir terjawab.</p></div>
           </div>
         </div>
       </section>
 
-      <section id="section-results" class="section">
-        <div class="topbar">
-          <div class="page-title"><h1>Riwayat hasil</h1><p>Setiap hasil tes tersimpan agar kamu bisa membandingkan arah studimu dari waktu ke waktu.</p></div>
-          <div class="chip">Total hasil: <b id="historyCount">0</b></div>
-        </div>
-        <div class="card"><div id="historyList" class="history-list"></div></div>
+      <section class="section" id="section-results">
+        <div class="topbar"><div class="page-title"><h1>Hasil Tes</h1><p>Lihat riwayat hasil asesmen untuk membandingkan perkembangan dirimu dari waktu ke waktu.</p></div><div class="badge info">Total hasil: <span id="historyCount">0</span></div></div>
+        <div class="card"><div class="panel-header"><div><h3>Riwayat hasil</h3></div></div><div id="historyList"></div></div>
       </section>
 
-      <section id="section-profile" class="section">
-        <div class="topbar">
-          <div class="page-title"><h1>Profil peserta</h1><p>Lengkapi profil agar hasil lebih mudah dibaca olehmu maupun pembimbing.</p></div>
-        </div>
+      <section class="section" id="section-profile">
+        <div class="topbar"><div class="page-title"><h1>Profil Peserta</h1><p>Lengkapi identitas agar laporan hasil lebih rapi dan mudah dibaca.</p></div></div>
         <div class="card">
-          <div class="panel-header"><div><h3>Data profil</h3><p>Data ini digunakan pada laporan hasil dan dashboard peserta.</p></div></div>
           <form id="profileForm">
             <div class="form-grid">
-              <div class="field"><label for="profileName">Nama lengkap</label><div class="input-wrap"><span>👤</span><input class="input" id="profileName"></div></div>
-              <div class="field"><label for="profileClass">Kelas</label><div class="input-wrap"><span>🏫</span><input class="input" id="profileClass" placeholder="Contoh: XII IPA"></div></div>
-              <div class="field"><label for="profileSchool">Asal sekolah / pondok</label><div class="input-wrap"><span>📘</span><input class="input" id="profileSchool" placeholder="Nama sekolah atau pesantren"></div></div>
-              <div class="field"><label for="profileGender">Jenis kelamin</label><div class="input-wrap"><span>⚥</span><select class="select" id="profileGender"><option value="">Pilih</option><option value="Putra">Putra</option><option value="Putri">Putri</option></select></div></div>
+              <div class="field"><label for="profileName">Nama lengkap</label><input class="input" id="profileName"></div>
+              <div class="field"><label>Email</label><input class="input" value="Email akun tersimpan" disabled></div>
+              <div class="field"><label for="profileClass">Kelas</label><input class="input" id="profileClass" placeholder="Misal: Kelas 12 IPA"></div>
+              <div class="field"><label for="profileSchool">Asal sekolah / pesantren</label><input class="input" id="profileSchool"></div>
+              <div class="field"><label for="profileGender">Jenis kelamin</label><select class="select" id="profileGender"><option value="">Pilih</option><option>Laki-laki</option><option>Perempuan</option></select></div>
             </div>
             <div id="profileMsg"></div>
             <button class="btn btn-primary" type="submit">Simpan profil</button>
@@ -169,22 +122,8 @@
     </main>
   </div>
 
-  <div class="modal" id="proofModal">
-    <div class="modal-card">
-      <div class="modal-head"><div><div class="kicker">Bukti transfer</div><h3>Detail pembayaran</h3></div><button class="icon-btn" id="closeProofModal" type="button">×</button></div>
-      <div class="grid-2">
-        <div class="proof-preview" id="proofPreview"></div>
-        <div id="proofMeta" class="reco-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="resultModal">
-    <div class="modal-card">
-      <div class="modal-head"><div><div class="kicker">Hasil asesmen</div><h3>Laporan peserta</h3></div><button class="icon-btn" id="closeResultModal" type="button">×</button></div>
-      <div id="resultModalBody"></div>
-    </div>
-  </div>
+  <div class="modal" id="proofModal"><div class="modal-card small-modal"><div class="modal-head"><div><div class="auth-kicker">Bukti transfer</div><h3>Preview pembayaran</h3></div><button class="icon-btn" id="closeProofModal" type="button">×</button></div><div class="proof-preview" id="proofPreview"></div><div class="grid-2" id="proofMeta" style="margin-top:18px;grid-template-columns:1fr 1fr"></div></div></div>
+  <div class="modal" id="resultModal"><div class="modal-card"><div class="modal-head"><div><div class="auth-kicker">Detail hasil</div><h3>Laporan asesmen</h3></div><button class="icon-btn" id="closeResultModal" type="button">×</button></div><div id="resultModalBody"></div></div></div>
 
   <script type="module" src="js/peserta.js"></script>
 </body>
