@@ -192,3 +192,46 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 /* Payment admin queue */
 .payment-summary{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 14px}.payment-filter{appearance:none;border:1px solid #e2e9f2;background:#fff;color:#64758d;border-radius:999px;padding:9px 13px;font-size:.68rem;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(30,54,94,.05);transition:.18s ease}.payment-filter b{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:5px;border-radius:999px;background:#f1f5fa;color:#62728a;font-size:.63rem}.payment-filter:hover{transform:translateY(-1px);border-color:#cad8ea}.payment-filter.active{background:linear-gradient(135deg,var(--blue),#3da6ff);color:#fff;border-color:transparent;box-shadow:0 10px 22px rgba(23,104,255,.18)}.payment-filter.active b{background:rgba(255,255,255,.18);color:#fff}
 @media (max-width:680px){.payment-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.payment-filter{width:100%;display:flex;justify-content:space-between;align-items:center;border-radius:14px;padding:10px 12px}}
+
+/* =========================================================
+   V9.2 — FOCUS MODE ASSESSMENT
+   ========================================================= */
+.section-assessment-focus{position:relative}
+.assessment-focus-hero{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:18px;align-items:stretch;margin-bottom:18px;padding:22px 24px;border-radius:28px;background:linear-gradient(135deg,#0f62ff 0%,#1b8cff 42%,#26c7d6 100%);box-shadow:0 24px 60px rgba(23,104,255,.18);color:#fff;overflow:hidden;position:relative}
+.assessment-focus-hero::after{content:"";position:absolute;right:-40px;top:-58px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.10);box-shadow:0 0 0 34px rgba(255,255,255,.07),0 0 0 68px rgba(255,255,255,.04)}
+.focus-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);font-size:.72rem;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+.assessment-focus-hero h1{margin:14px 0 10px;font-size:2rem;line-height:1.02;letter-spacing:-.04em;color:#fff;max-width:640px}.assessment-focus-hero h1 span{color:#aef8f3}.assessment-focus-hero p{margin:0;max-width:720px;color:#e9f4ff;font-size:.9rem;line-height:1.7}
+.focus-summary-card{position:relative;z-index:2;border-radius:24px;padding:18px;background:rgba(255,255,255,.14);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.18);display:flex;flex-direction:column;justify-content:center;min-height:100%}
+.focus-summary-card small{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#e7f5ff}.focus-summary-card strong{margin:10px 0 6px;font-size:2.3rem;line-height:1;font-weight:900}.focus-summary-card span{font-size:.8rem;line-height:1.55;color:#e7f4ff}
+.assessment-shell.focus-mode{grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.question-card-focus{position:relative;overflow:hidden;padding:26px;background:linear-gradient(180deg,#ffffff 0%,#fbfdff 60%,#f8fbff 100%);border:1px solid #e4ecf7;box-shadow:0 22px 58px rgba(39,64,108,.10)}
+.question-card-focus::before{content:"";position:absolute;inset:0 0 auto 0;height:108px;background:linear-gradient(180deg,rgba(23,104,255,.055),rgba(22,200,215,.02),transparent);pointer-events:none}
+.focus-stage-header{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.focus-step-badge{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:#eef4ff;color:var(--blue);font-size:.74rem;font-weight:850;border:1px solid #dbe7ff}.focus-step-badge span{font-weight:900}
+.question-card-focus .question-meta{position:relative;z-index:2;background:#fff;border:1px solid #edf2f8;border-radius:20px;padding:14px 16px;box-shadow:0 8px 18px rgba(39,64,108,.04);margin-bottom:18px}.question-card-focus .progress-num{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#1768ff,#16c8d7);color:#fff;font-size:1.05rem;box-shadow:0 10px 24px rgba(23,104,255,.20)}.question-card-focus .question-domain{font-size:.8rem;letter-spacing:.03em;color:#485873}.question-card-focus .progress-track{height:9px;margin-top:10px;background:#edf2f8}.question-card-focus .progress-track>span{background:linear-gradient(90deg,#1768ff,#16c8d7,#36d5bf)}
+.question-intro-line{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#f4f7ff;color:#53688d;font-size:.72rem;font-weight:800;border:1px solid #e8eef8;margin-bottom:14px}
+.question-card-focus .question-title{font-size:1.72rem;line-height:1.32;letter-spacing:-.03em;font-weight:850;max-width:840px}.question-card-focus .question-helper{margin:12px 0 20px;font-size:.82rem;line-height:1.65;color:#8291a7;max-width:680px}
+.question-card-focus .option-stack{gap:12px}
+.question-card-focus .option-btn{position:relative;padding:16px 18px;border-radius:20px;border:1px solid #e7edf6;background:#fff;box-shadow:0 10px 22px rgba(44,66,105,.04)}
+.question-card-focus .option-btn:hover{border-color:#cbdcff;background:linear-gradient(180deg,#ffffff,#fbfdff);box-shadow:0 14px 28px rgba(39,64,108,.08)}
+.question-card-focus .option-btn.selected{border-color:#85b0ff;background:linear-gradient(135deg,#eef4ff 0%,#f5fbff 100%);box-shadow:0 0 0 4px rgba(23,104,255,.08),0 16px 30px rgba(39,64,108,.08)}
+.question-card-focus .option-score{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,#f0f4fb,#e8f6ff);color:#4e5f7d;font-size:.92rem;font-weight:900;box-shadow:inset 0 0 0 1px #e1e8f2}
+.question-card-focus .option-btn.selected .option-score{background:linear-gradient(135deg,#1768ff,#16c8d7);color:#fff;box-shadow:0 10px 18px rgba(23,104,255,.22)}
+.question-card-focus .option-copy b{font-size:.92rem;color:#1f2d43}.question-card-focus .option-copy small{font-size:.76rem;line-height:1.58;color:#7d8aa0}
+.focus-actions{margin-top:20px}.focus-actions .btn{min-width:190px}
+.sidebar-note-focus{gap:14px}.sidebar-note-focus .note-card{padding:18px;border-radius:20px}.note-card-gradient{background:linear-gradient(135deg,#fff7e7,#fffdf7);border-color:#ffe2a6}.note-card-gradient h4{color:#ad6b00}.note-card-gradient p{color:#886b33}
+.question-card-focus .option-btn:disabled{opacity:.92;cursor:default}
+
+@media (max-width:1080px){
+  .assessment-focus-hero{grid-template-columns:1fr}
+  .assessment-shell.focus-mode{grid-template-columns:1fr}
+  .sidebar-note-focus{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .assessment-focus-hero{padding:18px 16px;border-radius:22px;margin-bottom:14px}.assessment-focus-hero h1{font-size:1.45rem}.assessment-focus-hero p{font-size:.78rem}
+  .focus-summary-card{padding:14px;border-radius:18px}.focus-summary-card strong{font-size:1.9rem}
+  .question-card-focus{padding:16px;border-radius:20px}.question-card-focus .question-meta{padding:12px 12px 13px;border-radius:16px}.question-card-focus .progress-num{width:48px;height:48px;border-radius:15px;font-size:.95rem}
+  .question-card-focus .question-title{font-size:1.2rem}.question-card-focus .question-helper{font-size:.74rem}.question-card-focus .option-btn{padding:12px 12px;border-radius:16px}.question-card-focus .option-score{width:40px;height:40px;border-radius:13px;font-size:.82rem}
+  .focus-actions{flex-direction:column}.focus-actions .btn{width:100%;min-width:0}
+  .sidebar-note-focus{grid-template-columns:1fr}
+}

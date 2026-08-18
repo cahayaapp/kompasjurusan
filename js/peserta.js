@@ -10,7 +10,8 @@ const state = {
   access: { paymentApproved:false },
   draft: { index:0, answers:{} },
   results: [],
-  payments: []
+  payments: [],
+  transitioning: false
 };
 
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
@@ -26,8 +27,8 @@ navButtons.forEach(btn=>btn.addEventListener('click', ()=> activateSection(btn.d
 mobileMenuBtn?.addEventListener('click', ()=> mobilePanel.classList.add('show'));
 closeMobilePanel?.addEventListener('click', ()=> mobilePanel.classList.remove('show'));
 
-document.getElementById('startAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); });
-document.getElementById('resumeAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); });
+document.getElementById('startAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); document.querySelector('.question-card-focus')?.scrollIntoView({behavior:'smooth', block:'start'}); });
+document.getElementById('resumeAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); document.querySelector('.question-card-focus')?.scrollIntoView({behavior:'smooth', block:'start'}); });
 document.getElementById('startRetestBtn')?.addEventListener('click', async ()=>{
   if(!state.access.paymentApproved) return alert('Akses asesmen belum aktif.');
   if(confirm('Mulai asesmen dari awal? Progres sebelumnya akan diganti.')){
@@ -172,10 +173,12 @@ function renderQuestion(){
   if(!state.access.paymentApproved){
     document.getElementById('questionArea').innerHTML = `<div class="empty">Akses asesmen belum aktif. Silakan selesaikan pembayaran terlebih dahulu.</div>`;
     document.getElementById('questionCount').textContent = `0/${QUESTIONS.length}`;
+    document.getElementById('focusQuestionNumber').textContent = '0';
     document.getElementById('questionSection').textContent = '-';
     document.getElementById('questionProgressFill').style.width = '0%';
     document.getElementById('prevBtn').disabled = true;
     document.getElementById('nextBtn').disabled = true;
+    document.getElementById('nextBtn').textContent = 'Pilih jawaban dulu';
     return;
   }
   const idx = Math.max(0, Math.min(state.draft.index || 0, QUESTIONS.length - 1));
@@ -183,32 +186,47 @@ function renderQuestion(){
   const q = QUESTIONS[idx];
   const val = Number(state.draft.answers?.[q.id] || 0);
   document.getElementById('questionCount').textContent = `${idx+1}/${QUESTIONS.length}`;
+  document.getElementById('focusQuestionNumber').textContent = `${idx+1}`;
   document.getElementById('questionSection').textContent = QUESTION_SECTIONS[q.section] || q.section;
   document.getElementById('questionProgressFill').style.width = `${((idx+1)/QUESTIONS.length)*100}%`;
-  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Tersimpan online</span>`;
+  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>${val ? 'Jawaban tersimpan' : 'Menunggu jawaban'}</span>`;
   document.getElementById('questionArea').innerHTML = `
+    <div class="question-intro-line">Butir ${idx+1} dari ${QUESTIONS.length}</div>
     <div class="question-title">${q.prompt}</div>
-    <div class="question-helper">Jawab sejujur mungkin sesuai keadaanmu sekarang. Tidak ada jawaban benar atau salah.</div>
+    <div class="question-helper">Pilih satu jawaban yang paling menggambarkan dirimu. Setelah dipilih, sistem akan menyimpan dan berpindah otomatis.</div>
     <div class="option-stack">
       ${Object.entries(SCALE_LABELS).map(([score, meta])=>`
-        <button class="option-btn ${Number(score)===val?'selected':''}" data-answer="${score}">
+        <button class="option-btn ${Number(score)===val?'selected':''}" data-answer="${score}" ${state.transitioning ? 'disabled' : ''}>
           <div class="option-score">${score}</div>
           <div class="option-copy"><b>${meta.title}</b><small>${meta.desc}</small></div>
         </button>
       `).join('')}
     </div>`;
   document.querySelectorAll('[data-answer]').forEach(btn=> btn.addEventListener('click', ()=> chooseAnswer(q.id, Number(btn.dataset.answer))));
-  document.getElementById('prevBtn').disabled = idx === 0;
-  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('prevBtn').disabled = idx === 0 || state.transitioning;
+  document.getElementById('nextBtn').disabled = !val || state.transitioning;
+  document.getElementById('nextBtn').textContent = val ? (idx >= QUESTIONS.length - 1 ? 'Selesaikan asesmen' : 'Lanjut ke berikutnya →') : 'Pilih jawaban dulu';
 }
 
 async function chooseAnswer(id, score){
+  if(state.transitioning) return;
+  state.transitioning = true;
   state.draft.answers[id] = score;
+  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saving"></span>Menyimpan jawaban...</span>`;
+  renderQuestion();
   await saveDraft();
   const isLast = state.draft.index >= QUESTIONS.length - 1;
-  if(isLast){ await finalizeAssessment(); return; }
+  if(isLast){
+    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Menyelesaikan asesmen...</span>`;
+    state.transitioning = false;
+    await finalizeAssessment();
+    return;
+  }
+  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Tersimpan • pindah ke butir berikutnya</span>`;
+  await new Promise(resolve => setTimeout(resolve, 320));
   state.draft.index += 1;
   await saveDraft();
+  state.transitioning = false;
   renderQuestion();
 }
 async function saveDraft(){
@@ -222,8 +240,17 @@ document.getElementById('prevBtn')?.addEventListener('click', async ()=>{
   renderQuestion();
 });
 document.getElementById('nextBtn')?.addEventListener('click', async ()=>{
+  if(state.transitioning) return;
+  const current = QUESTIONS[state.draft.index];
+  const hasAnswer = current && Number(state.draft.answers?.[current.id] || 0) > 0;
+  if(!hasAnswer){
+    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot error"></span>Jawab butir ini terlebih dahulu</span>`;
+    return;
+  }
   if(state.draft.index >= QUESTIONS.length - 1){ await finalizeAssessment(); return; }
-  state.draft.index += 1; await saveDraft(); renderQuestion();
+  state.draft.index += 1;
+  await saveDraft();
+  renderQuestion();
 });
 
 async function finalizeAssessment(){

@@ -80,21 +80,35 @@
         <div class="card" style="margin-top:16px"><div class="panel-header"><div><h3>Riwayat Pembayaran</h3><p>Pantau status bukti transfer yang pernah dikirim.</p></div></div><div id="paymentHistory"></div></div>
       </section>
 
-      <section id="section-assessment" class="section">
-        <div class="topbar"><div class="page-title"><h1>Asesmen Dirimu</h1><p>Satu pernyataan per layar. Jawab sesuai keadaanmu sekarang, bukan jawaban yang terlihat paling ideal.</p></div><div class="inline-actions"><span class="chip"><span id="assessmentCount">108</span> butir</span><button class="btn btn-secondary btn-sm" id="resumeAssessmentBtn" type="button">Lanjutkan Progres</button></div></div>
-        <div class="assessment-shell">
-          <div class="question-card">
-            <div class="question-meta">
-              <div class="progress-wrap"><div class="progress-num" id="questionCount">1/108</div><div class="progress-info"><div class="question-domain" id="questionSection">Minat RIASEC</div><div class="progress-track"><span id="questionProgressFill" style="width:0%"></span></div></div></div>
+      <section id="section-assessment" class="section section-assessment-focus">
+        <div class="assessment-focus-hero">
+          <div>
+            <span class="focus-pill">Mode Fokus Aktif</span>
+            <h1>Fokus pada <span>satu pernyataan</span> setiap kali.</h1>
+            <p>Untuk menjaga kualitas hasil, sistem tidak akan melanjutkan ke butir berikutnya sebelum butir saat ini dijawab. Setelah memilih jawaban, sistem akan menyimpan lalu berpindah otomatis.</p>
+          </div>
+          <div class="focus-summary-card">
+            <small>Total butir</small>
+            <strong><span id="assessmentCount">108</span></strong>
+            <span>Fresh, fokus, dan lebih nyaman dikerjakan.</span>
+          </div>
+        </div>
+        <div class="assessment-shell focus-mode">
+          <div class="question-card question-card-focus">
+            <div class="focus-stage-header">
+              <div class="focus-step-badge">Langkah <span id="questionCount">1/108</span></div>
               <div id="saveStateText"></div>
             </div>
+            <div class="question-meta">
+              <div class="progress-wrap"><div class="progress-num" id="focusQuestionNumber">1</div><div class="progress-info"><div class="question-domain" id="questionSection">Minat RIASEC</div><div class="progress-track"><span id="questionProgressFill" style="width:0%"></span></div></div></div>
+            </div>
             <div id="questionArea"></div>
-            <div class="question-actions"><button class="btn btn-secondary" id="prevBtn" type="button">← Sebelumnya</button><button class="btn btn-primary" id="nextBtn" type="button">Berikutnya →</button></div>
+            <div class="question-actions focus-actions"><button class="btn btn-secondary" id="prevBtn" type="button">← Sebelumnya</button><button class="btn btn-primary" id="nextBtn" type="button" disabled>Pilih jawaban dulu</button></div>
           </div>
-          <aside class="sidebar-note">
-            <div class="note-card"><h4>Jawab dengan jujur</h4><p>Tidak ada jawaban benar atau salah. Pilih yang paling menggambarkan dirimu.</p></div>
-            <div class="note-card"><h4>Progresmu</h4><p id="draftProgressText">Belum ada progres pengerjaan.</p></div>
-            <div class="note-card"><h4>Ingin mengulang?</h4><p>Kamu bisa mulai lagi dari awal kapan saja setelah akses aktif.</p><button class="btn btn-ghost btn-block btn-sm" id="startRetestBtn" type="button">Mulai dari Awal</button></div>
+          <aside class="sidebar-note sidebar-note-focus">
+            <div class="note-card note-card-gradient"><h4>Aturan fokus</h4><p>Kamu tidak bisa lanjut jika butir sekarang belum dijawab. Jadi kerjakan setahap demi setahap.</p></div>
+            <div class="note-card"><h4>Progresmu</h4><p id="draftProgressText">Belum ada progres pengerjaan.</p><button class="btn btn-soft btn-block btn-sm" id="resumeAssessmentBtn" type="button">Muat progres terakhir</button></div>
+            <div class="note-card"><h4>Mulai ulang</h4><p>Kamu tetap bisa mengulang dari awal kapan saja setelah akses aktif.</p><button class="btn btn-ghost btn-block btn-sm" id="startRetestBtn" type="button">Mulai dari Awal</button></div>
           </aside>
         </div>
       </section>
