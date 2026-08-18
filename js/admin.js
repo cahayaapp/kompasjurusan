@@ -2,7 +2,7 @@ import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
 import { defaultPublicSettings } from './data.js';
-import { downloadAssessmentPdf } from './report-pdf.js';
+import { downloadAssessmentPdf } from './report-pdf.js?v=9.7';
 
 const state = {
   user: null,
@@ -19,6 +19,7 @@ const state = {
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
 bindLogout(document.getElementById('logoutBtn'));
 bindLogout(document.getElementById('logoutBtnMobile'));
+bindAdminPdfButtons();
 
 document.querySelectorAll('[data-section-target]').forEach(btn=> btn.addEventListener('click', ()=> activateSection(btn.dataset.sectionTarget)));
 document.getElementById('mobileMenuBtn')?.addEventListener('click', ()=> document.getElementById('mobilePanel')?.classList.add('show'));
@@ -127,7 +128,7 @@ function summarize(){
   if(!state.results.length){ recentWrap.innerHTML = '<div class="empty">Belum ada hasil asesmen.</div>'; }
   else {
     recentWrap.innerHTML = state.results.slice(0,6).map(item=> `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${item.recommendations?.[0]?.cluster || '-'} • ${formatDateTime(item.createdAt)}</small></div><div class="inline-actions"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-') || '-'}</span><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ PDF</button></div></div>`).join('');
-    bindAdminPdfButtons(recentWrap);
+    bindAdminPdfButtons();
   }
   renderPaymentSummary();
 }
@@ -252,36 +253,78 @@ function renderParticipants(){
       <td data-label="Laporan">${latestResult ? `<button class="btn btn-primary btn-sm" data-admin-pdf="${latestResult.uid}|${latestResult.id}">⬇ PDF</button>` : '-'}</td>
     </tr>`;
   }).join('');
-  bindAdminPdfButtons(tbody);
+  bindAdminPdfButtons();
 }
 
 function participantForResult(result){
   const p = state.participants.find(x=>x.uid===result?.uid) || {};
-  return { ...result?.participant, ...p, uid:result?.uid || p.uid || '' };
+  return { ...(result?.participant || {}), ...p, uid:result?.uid || p.uid || '' };
 }
 
-async function handleAdminPdf(result, button){
-  if(!result) return;
+async function resolveResult(uid,id){
+  let result = state.results.find(x=>x.uid===uid && x.id===id);
+  if(result) return result;
+  if(!uid || !id) return null;
+  try{
+    const snap = await get(dbRefs.result(uid,id));
+    if(!snap.exists()) return null;
+    result = { uid, id, ...(snap.val() || {}) };
+    state.results.unshift(result);
+    return result;
+  }catch(err){
+    console.error('Gagal memuat hasil langsung dari Firebase', err);
+    return null;
+  }
+}
+
+async function resolveParticipant(result){
+  const merged = participantForResult(result);
+  if(merged?.name && merged?.email) return merged;
+  if(!result?.uid) return merged;
+  try{
+    const snap = await get(dbRefs.user(result.uid));
+    if(snap.exists()) return { ...(result?.participant || {}), ...(snap.val() || {}), uid: result.uid };
+  }catch(err){
+    console.warn('Profil peserta tidak dapat dimuat untuk PDF', err);
+  }
+  return merged;
+}
+
+async function handleAdminPdfByKey(uid,id,button){
   const old = button?.innerHTML;
   try{
-    if(button){ button.disabled=true; button.innerHTML='Menyiapkan...'; }
-    await downloadAssessmentPdf(result, participantForResult(result), { filename:`hasil-kompas-jurusan-${(participantForResult(result).name||'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.pdf` });
+    if(button){ button.disabled=true; button.innerHTML='Menyiapkan PDF...'; }
+    const result = await resolveResult(uid,id);
+    if(!result) throw new Error('Data hasil asesmen tidak ditemukan.');
+    const participant = await resolveParticipant(result);
+    const safeName = (participant?.name || 'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    await downloadAssessmentPdf(result, participant, { filename:`hasil-kompas-jurusan-${safeName || 'peserta'}.pdf` });
   }catch(err){
-    console.error(err);
-    alert('Laporan PDF belum dapat dibuat. Silakan coba lagi.');
+    console.error('Admin PDF failed', err);
+    alert(`Laporan PDF belum dapat dibuat. ${err?.message || 'Silakan coba lagi.'}`);
   }finally{
     if(button){ button.disabled=false; button.innerHTML=old; }
   }
 }
 
-function bindAdminPdfButtons(root=document){
-  root.querySelectorAll?.('[data-admin-pdf]').forEach(btn=>{
-    if(btn.dataset.pdfBound) return;
-    btn.dataset.pdfBound='1';
-    btn.addEventListener('click', ()=>{
-      const [uid,id] = btn.dataset.adminPdf.split('|');
-      handleAdminPdf(state.results.find(x=>x.uid===uid && x.id===id), btn);
-    });
+function bindAdminPdfButtons(){
+  // Event delegation: aman untuk tombol yang dibuat ulang secara dinamis oleh render dashboard.
+  if(document.documentElement.dataset.adminPdfDelegated) return;
+  document.documentElement.dataset.adminPdfDelegated='1';
+  document.addEventListener('click', event=>{
+    const btn = event.target.closest?.('[data-admin-pdf]');
+    if(!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const token = btn.dataset.adminPdf || '';
+    const sep = token.indexOf('|');
+    const uid = sep >= 0 ? token.slice(0,sep) : '';
+    const id = sep >= 0 ? token.slice(sep+1) : '';
+    if(!uid || !id){
+      alert('ID hasil asesmen tidak lengkap. Muat ulang halaman admin lalu coba lagi.');
+      return;
+    }
+    handleAdminPdfByKey(uid,id,btn);
   });
 }
 
@@ -301,7 +344,7 @@ function renderResults(){
       <td data-label="PDF"><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ Unduh PDF</button></td>
     </tr>`;
   }).join('');
-  bindAdminPdfButtons(tbody);
+  bindAdminPdfButtons();
 }
 
 document.getElementById('settingsForm')?.addEventListener('submit', async e=>{
