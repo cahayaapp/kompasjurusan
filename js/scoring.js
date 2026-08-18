@@ -1,4 +1,5 @@
 import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js';
+import { buildTkaGuidance } from './tka-map.js';
 
 const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : 0;
 
@@ -70,6 +71,7 @@ export function computeAssessmentResult(answers, profile={}){
     values,
     workstyle,
     recommendations,
+    tkaGuidance: buildTkaGuidance(recommendations),
     summaryNarrative: makeNarrative(topRiasec, academic, values, workstyle, recommendations),
     completedItems: Object.keys(answers || {}).length,
     createdAt: Date.now()

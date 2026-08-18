@@ -1,6 +1,7 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
 import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
 import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
+import { buildTkaGuidance, getMajorTkaInfo } from './tka-map.js';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
@@ -270,6 +271,76 @@ async function finalizeAssessment(){
   activateSection('section-results');
 }
 
+
+function tkaSubjectIcon(subject=''){
+  const s = subject.toLowerCase();
+  if(s.includes('biologi')) return '🧬';
+  if(s.includes('kimia')) return '⚗️';
+  if(s.includes('fisika')) return '⚛️';
+  if(s.includes('matematika')) return '📐';
+  if(s.includes('ekonomi')) return '📈';
+  if(s.includes('sosiologi')) return '👥';
+  if(s.includes('antropologi')) return '🌍';
+  if(s.includes('sejarah')) return '🏛️';
+  if(s.includes('pancasila') || s.includes('ppkn')) return '🇮🇩';
+  if(s.includes('bahasa indonesia')) return '📖';
+  if(s.includes('bahasa inggris')) return '🌐';
+  if(s.includes('kewirausahaan')) return '💡';
+  if(s.includes('seni')) return '🎨';
+  return '📘';
+}
+
+function renderSubjectChip(subject, type='elective'){
+  return `<span class="tka-subject-chip ${type}"><span>${tkaSubjectIcon(subject)}</span>${subject}</span>`;
+}
+
+function renderTkaGuidance(result, compact=false){
+  const guidance = result?.tkaGuidance?.required ? result.tkaGuidance : buildTkaGuidance(result?.recommendations || []);
+  const priority = guidance.priorityElectives || [];
+  return `
+    <div class="tka-guidance-card ${compact ? 'compact' : ''}">
+      <div class="tka-guidance-head">
+        <div>
+          <span class="tka-eyebrow">REKOMENDASI PAKET BIMBEL TKA</span>
+          <h3>Mapel yang perlu kamu siapkan</h3>
+          <p>Berdasarkan rumpun jurusan teratasmu: <b>${guidance.cluster || result?.recommendations?.[0]?.cluster || '-'}</b>${guidance.percent ? ` • ${guidance.percent}% cocok` : ''}</p>
+        </div>
+        <div class="tka-bimbel-badge">🎯 Arah Belajar</div>
+      </div>
+      <div class="tka-plan-grid">
+        <div class="tka-plan-panel required-panel">
+          <div class="tka-plan-label"><span>01</span><div><b>Mapel wajib</b><small>Diikuti semua peserta TKA SMA/MA sederajat</small></div></div>
+          <div class="tka-chip-wrap">${(guidance.required || []).map(x=>renderSubjectChip(x,'required')).join('')}</div>
+        </div>
+        <div class="tka-plan-panel elective-panel">
+          <div class="tka-plan-label"><span>02</span><div><b>Mapel pilihan prioritas</b><small>Inilah fokus bimbel yang paling layak kamu ambil</small></div></div>
+          <div class="tka-chip-wrap priority">${priority.length ? priority.map(x=>renderSubjectChip(x,'priority')).join('') : '<span class="tka-empty-choice">Sesuaikan dengan prodi spesifik dan mapel yang ada di rapor.</span>'}</div>
+          ${priority.length === 1 ? '<div class="tka-choice-note">Pilihan kedua perlu disesuaikan dengan prodi target lain yang kamu pertimbangkan dan rekam mapel di rapor.</div>' : ''}
+        </div>
+      </div>
+      ${compact ? '' : `
+        <div class="tka-major-map">
+          <div class="tka-major-map-head"><b>Kalau target jurusanmu lebih spesifik</b><small>Lihat mapel pendukung/pilihan yang relevan untuk setiap jurusan pada rekomendasi teratas.</small></div>
+          ${(guidance.majorBreakdown || []).map(item=>`
+            <div class="tka-major-row">
+              <div class="tka-major-name">${item.major}</div>
+              <div class="tka-major-subjects">
+                ${item.options?.length ? item.options.map(x=>renderSubjectChip(x,'mini')).join('') : `<span class="tka-custom-label">${item.customLabel || 'Sesuaikan dengan prodi target.'}</span>`}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="tka-source-note">${guidance.note || 'Gunakan sebagai panduan awal. Pilihan final menyesuaikan prodi target dan mapel yang tercantum di rapor.'}</div>
+      `}
+    </div>`;
+}
+
+function renderRecommendationTka(item){
+  const guidance = buildTkaGuidance([item]);
+  const subjects = guidance.priorityElectives || [];
+  return `<div class="reco-tka-strip"><span class="reco-tka-label">Mapel pilihan TKA</span><div class="tka-chip-wrap mini-row">${subjects.length ? subjects.map(x=>renderSubjectChip(x,'mini')).join('') : '<span class="tka-custom-label">Sesuaikan prodi spesifik</span>'}</div></div>`;
+}
+
 function renderResultCard(result, compact=false){
   const top = result.topRiasec?.[0];
   return `
@@ -280,6 +351,7 @@ function renderResultCard(result, compact=false){
       <div class="result-score-box"><small>Rekomendasi utama</small><b>${result.recommendations?.[0]?.cluster || '-'}</b><div style="color:#fff4cc;line-height:1.7">${(result.recommendations?.[0]?.majors || []).slice(0,4).join(', ')}</div></div>
     </div>
     <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
+    ${renderTkaGuidance(result, true)}
     ${compact ? '' : `<div class="inline-actions" style="margin-top:18px"><button class="btn btn-primary btn-sm" data-open-report="${result.id || ''}">Lihat detail</button></div>`}
   </div>`;
 }
@@ -308,11 +380,12 @@ function showResult(result){
       <div class="panel-header"><div><h3>Skor RIASEC</h3></div></div>
       <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     </div>
+    ${renderTkaGuidance(result, false)}
     <div class="grid-2" style="margin-top:18px">
       <div class="card"><div class="panel-header"><div><h3>Kekuatan yang menonjol</h3></div></div><div class="reco-list">${result.academic.slice(0,4).map(x=>`<div class="reco-card"><b>${labelAcademic(x.code)}</b><small>${x.percent}%</small></div>`).join('')}${result.workstyle.slice(0,4).map(x=>`<div class="reco-card"><b>${labelWorkstyle(x.code)}</b><small>${x.percent}%</small></div>`).join('')}</div></div>
       <div class="card"><div class="panel-header"><div><h3>Nilai hidup</h3></div></div><div class="reco-list">${result.values.slice(0,4).map(x=>`<div class="reco-card"><b>${labelValue(x.code)}</b><small>${x.percent}%</small></div>`).join('')}</div></div>
     </div>
-    <div class="card" style="margin-top:18px"><div class="panel-header"><div><h3>Rekomendasi rumpun studi</h3><p>${result.summaryNarrative}</p></div></div><div class="reco-list">${result.recommendations.map(item=>`<div class="reco-card"><b>${item.cluster} — ${item.percent}% cocok</b><small>${item.majors.join(', ')}<br>${item.reasons.join(' ')}</small></div>`).join('')}</div></div>`;
+    <div class="card" style="margin-top:18px"><div class="panel-header"><div><h3>Rekomendasi rumpun studi</h3><p>${result.summaryNarrative}</p></div></div><div class="reco-list">${result.recommendations.map(item=>`<div class="reco-card result-reco-card"><b>${item.cluster} — ${item.percent}% cocok</b><small>${item.majors.join(', ')}<br>${item.reasons.join(' ')}</small>${renderRecommendationTka(item)}</div>`).join('')}</div></div>`;
   toggleModal(document.getElementById('resultModal'), true);
 }
 
