@@ -126,11 +126,26 @@ document.getElementById('paymentForm')?.addEventListener('submit', async e=>{
     if(!senderName || !senderBank || !file) throw new Error('Lengkapi nama pengirim, nama bank, dan bukti transfer.');
     const proofDataUrl = await compressImage(file, 1200, .78);
     const itemRef = push(dbRefs.paymentRoot(state.user.uid));
-    await set(itemRef, {
-      senderName, senderBank, amount: state.settings.price, proofDataUrl,
-      status:'pending', note:'', createdAt:Date.now(),
+    const paymentId = itemRef.key;
+    const createdAt = Date.now();
+    const detail = {
+      uid: state.user.uid, paymentId, senderName, senderBank, amount: state.settings.price, proofDataUrl,
+      status:'pending', note:'', createdAt,
       participantName: state.profile.name || '', participantEmail: state.profile.email || ''
-    });
+    };
+    const indexItem = {
+      uid: state.user.uid, paymentId, senderName, senderBank, amount: state.settings.price,
+      status:'pending', note:'', createdAt,
+      participantName: state.profile.name || '', participantEmail: state.profile.email || ''
+    };
+    // Simpan detail utama terlebih dahulu agar konfirmasi tidak hilang meski indeks admin sedang bermasalah.
+    await set(dbRefs.payment(state.user.uid, paymentId), detail);
+    // Indeks ringan khusus dashboard admin; tidak membawa gambar bukti agar daftar cepat dimuat.
+    try {
+      await set(dbRefs.paymentIndex(paymentId), indexItem);
+    } catch(indexError) {
+      console.warn('paymentIndex belum dapat ditulis, detail pembayaran tetap tersimpan.', indexError);
+    }
     e.target.reset();
     setMessage(document.getElementById('paymentMsg'), 'Bukti transfer berhasil dikirim. Silakan tunggu verifikasi admin.', 'success');
   }catch(err){ setMessage(document.getElementById('paymentMsg'), err.message || 'Gagal mengirim bukti transfer.', 'error'); }

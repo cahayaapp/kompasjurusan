@@ -2,7 +2,6 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "users": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
@@ -10,14 +9,12 @@
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (auth.uid === $uid && (!data.exists() ? newData.child('role').val() === 'participant' : newData.child('role').val() === data.child('role').val())))"
       }
     },
-
     "settings": {
       "public": {
         ".read": true,
         ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     },
-
     "payments": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
@@ -27,7 +24,6 @@
         }
       }
     },
-
     "access": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
@@ -35,14 +31,12 @@
         ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     },
-
     "drafts": {
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".write": "auth != null && auth.uid === $uid"
       }
     },
-
     "results": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$uid": {
@@ -50,6 +44,12 @@
         "$resultId": {
           ".write": "auth != null && auth.uid === $uid"
         }
+      }
+    },
+    "paymentIndex": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$paymentId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (!data.exists() && newData.child('uid').val() === auth.uid && newData.child('status').val() === 'pending'))"
       }
     }
   }

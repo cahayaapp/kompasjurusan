@@ -8,8 +8,11 @@ const state = {
   profile: null,
   settings: defaultPublicSettings(),
   participants: [],
+  paymentIndex: [],
+  legacyPayments: [],
   payments: [],
-  results: []
+  results: [],
+  paymentFilter: 'all'
 };
 
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
@@ -17,8 +20,8 @@ bindLogout(document.getElementById('logoutBtn'));
 bindLogout(document.getElementById('logoutBtnMobile'));
 
 document.querySelectorAll('[data-section-target]').forEach(btn=> btn.addEventListener('click', ()=> activateSection(btn.dataset.sectionTarget)));
-document.getElementById('mobileMenuBtn')?.addEventListener('click', ()=> document.getElementById('mobilePanel').classList.add('show'));
-document.getElementById('closeMobilePanel')?.addEventListener('click', ()=> document.getElementById('mobilePanel').classList.remove('show'));
+document.getElementById('mobileMenuBtn')?.addEventListener('click', ()=> document.getElementById('mobilePanel')?.classList.add('show'));
+document.getElementById('closeMobilePanel')?.addEventListener('click', ()=> document.getElementById('mobilePanel')?.classList.remove('show'));
 
 function activateSection(id){
   document.querySelectorAll('.section').forEach(sec=> sec.classList.toggle('active', sec.id === id));
@@ -32,63 +35,205 @@ function paintProfile(){
   document.querySelectorAll('[data-user-initials]').forEach(el=> el.textContent = initials(state.profile.name || 'Administrator'));
 }
 
+function paymentKey(item){
+  return `${item.uid || ''}|${item.id || item.paymentId || ''}`;
+}
+
+function looksLikePayment(value){
+  return !!value && typeof value === 'object' && (
+    'senderName' in value || 'senderBank' in value || 'proofDataUrl' in value ||
+    'amount' in value || 'status' in value || 'participantName' in value
+  );
+}
+
+function normalizePayments(raw){
+  const rows = [];
+  Object.entries(raw || {}).forEach(([firstKey, firstValue])=>{
+    if(looksLikePayment(firstValue)){
+      const uid = firstValue.uid || firstValue.userId || firstValue.participantUid || '';
+      const id = firstValue.paymentId || firstValue.id || firstKey;
+      rows.push({ uid, id, paymentId:id, ...firstValue });
+      return;
+    }
+    if(firstValue && typeof firstValue === 'object'){
+      Object.entries(firstValue).forEach(([secondKey, secondValue])=>{
+        if(!looksLikePayment(secondValue)) return;
+        const uid = secondValue.uid || secondValue.userId || secondValue.participantUid || firstKey;
+        const id = secondValue.paymentId || secondValue.id || secondKey;
+        rows.push({ uid, id, paymentId:id, ...secondValue });
+      });
+    }
+  });
+  return rows;
+}
+
+function mergePaymentSources(){
+  const map = new Map();
+  // Legacy/detail first so proofDataUrl remains available when present.
+  state.legacyPayments.forEach(item=> map.set(paymentKey(item), { ...item }));
+  state.paymentIndex.forEach(item=>{
+    const key = paymentKey(item);
+    map.set(key, { ...(map.get(key) || {}), ...item });
+  });
+  state.payments = [...map.values()].filter(item=> item.id || item.paymentId).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  renderPayments();
+  summarize();
+  renderParticipants();
+  backfillPaymentIndex();
+}
+
+async function backfillPaymentIndex(){
+  if(!state.profile || state.profile.role !== 'admin') return;
+  const indexed = new Set(state.paymentIndex.map(paymentKey));
+  const candidates = state.legacyPayments.filter(item=> item.uid && item.id && !indexed.has(paymentKey(item)));
+  for(const item of candidates.slice(0, 50)){
+    const payload = {
+      uid: item.uid,
+      paymentId: item.id,
+      participantName: item.participantName || participantNameFor(item.uid, item.participantEmail),
+      participantEmail: item.participantEmail || participantEmailFor(item.uid),
+      senderName: item.senderName || '-',
+      senderBank: item.senderBank || '-',
+      amount: Number(item.amount || 0),
+      status: item.status || 'pending',
+      note: item.note || '',
+      createdAt: item.createdAt || Date.now(),
+      reviewedAt: item.reviewedAt || null,
+      reviewedBy: item.reviewedBy || ''
+    };
+    try { await set(dbRefs.paymentIndex(item.id), payload); } catch(e) { console.warn('Gagal backfill paymentIndex', e); }
+  }
+}
+
+function participantNameFor(uid, fallbackEmail=''){
+  const p = state.participants.find(x=>x.uid===uid || (fallbackEmail && x.email===fallbackEmail));
+  return p?.name || '-';
+}
+function participantEmailFor(uid){
+  return state.participants.find(x=>x.uid===uid)?.email || '';
+}
+
 function summarize(){
   document.getElementById('statParticipants').textContent = state.participants.length;
   document.getElementById('statPending').textContent = state.payments.filter(x=>x.status==='pending').length;
   document.getElementById('statApproved').textContent = state.payments.filter(x=>x.status==='approved').length;
   document.getElementById('statResults').textContent = state.results.length;
-  document.getElementById('dashboardPaymentsMini').innerHTML = `<span class="badge pending">${state.payments.filter(x=>x.status==='pending').length} pembayaran menunggu</span>`;
+  const pending = state.payments.filter(x=>x.status==='pending').length;
+  document.getElementById('dashboardPaymentsMini').innerHTML = pending
+    ? `<span class="badge pending">${pending} pembayaran menunggu</span>`
+    : '<span class="badge approved">Tidak ada antrean pembayaran</span>';
   const recentWrap = document.getElementById('recentResults');
   if(!state.results.length){ recentWrap.innerHTML = '<div class="empty">Belum ada hasil asesmen.</div>'; }
-  else recentWrap.innerHTML = state.results.slice(0,6).map(item=> `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${item.recommendations?.[0]?.cluster || '-'} • ${formatDateTime(item.createdAt)}</small></div><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-')}</span></div>`).join('');
+  else recentWrap.innerHTML = state.results.slice(0,6).map(item=> `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${item.recommendations?.[0]?.cluster || '-'} • ${formatDateTime(item.createdAt)}</small></div><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-') || '-'}</span></div>`).join('');
+  renderPaymentSummary();
+}
+
+function renderPaymentSummary(){
+  const wrap = document.getElementById('paymentSummary');
+  if(!wrap) return;
+  const counts = {
+    all: state.payments.length,
+    pending: state.payments.filter(x=>x.status==='pending').length,
+    approved: state.payments.filter(x=>x.status==='approved').length,
+    rejected: state.payments.filter(x=>x.status==='rejected').length
+  };
+  wrap.innerHTML = `
+    <button type="button" class="payment-filter ${state.paymentFilter==='all'?'active':''}" data-payment-filter="all">Semua <b>${counts.all}</b></button>
+    <button type="button" class="payment-filter ${state.paymentFilter==='pending'?'active':''}" data-payment-filter="pending">Menunggu <b>${counts.pending}</b></button>
+    <button type="button" class="payment-filter ${state.paymentFilter==='approved'?'active':''}" data-payment-filter="approved">Disetujui <b>${counts.approved}</b></button>
+    <button type="button" class="payment-filter ${state.paymentFilter==='rejected'?'active':''}" data-payment-filter="rejected">Ditolak <b>${counts.rejected}</b></button>`;
+  wrap.querySelectorAll('[data-payment-filter]').forEach(btn=>btn.addEventListener('click', ()=>{
+    state.paymentFilter = btn.dataset.paymentFilter;
+    renderPaymentSummary();
+    renderPayments();
+  }));
 }
 
 function renderPayments(){
   const tbody = document.getElementById('paymentsBody');
-  if(!state.payments.length){ tbody.innerHTML = '<tr><td colspan="6">Belum ada data pembayaran.</td></tr>'; return; }
-  tbody.innerHTML = state.payments.map(item=>`
-    <tr>
-      <td data-label="Peserta"><strong>${item.participantName || '-'}</strong><small>${item.participantEmail || ''}</small></td>
-      <td data-label="Pengirim"><strong>${item.senderName}</strong><small>${item.senderBank}</small></td>
-      <td data-label="Jumlah">${rupiah(item.amount)}</td>
-      <td data-label="Waktu">${formatDateTime(item.createdAt)}</td>
-      <td data-label="Status"><span class="badge ${item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending'}">${item.status === 'approved' ? 'Disetujui' : item.status === 'rejected' ? 'Ditolak' : 'Menunggu'}</span></td>
-      <td data-label="Aksi"><button class="btn btn-secondary btn-sm" data-review="${item.uid}|${item.id}">Tinjau</button></td>
-    </tr>`).join('');
+  if(!tbody) return;
+  const rows = state.paymentFilter === 'all' ? state.payments : state.payments.filter(x=>x.status===state.paymentFilter);
+  if(!rows.length){
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty">${state.payments.length ? 'Tidak ada pembayaran pada status ini.' : 'Belum ada konfirmasi pembayaran yang masuk.'}</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(item=>{
+    const participantName = item.participantName || participantNameFor(item.uid, item.participantEmail);
+    const participantEmail = item.participantEmail || participantEmailFor(item.uid);
+    return `
+      <tr>
+        <td data-label="Peserta"><strong>${participantName || '-'}</strong><small>${participantEmail || ''}</small></td>
+        <td data-label="Pengirim"><strong>${item.senderName || '-'}</strong><small>${item.senderBank || '-'}</small></td>
+        <td data-label="Jumlah">${rupiah(item.amount)}</td>
+        <td data-label="Waktu">${formatDateTime(item.createdAt)}</td>
+        <td data-label="Status"><span class="badge ${item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending'}">${item.status === 'approved' ? 'Disetujui' : item.status === 'rejected' ? 'Ditolak' : 'Menunggu'}</span></td>
+        <td data-label="Aksi"><button class="btn btn-secondary btn-sm" data-review="${item.uid}|${item.id}">Tinjau</button></td>
+      </tr>`;
+  }).join('');
   tbody.querySelectorAll('[data-review]').forEach(btn=> btn.addEventListener('click', ()=> openPayment(btn.dataset.review)));
 }
 
 let selectedPayment = null;
-function openPayment(key){
+async function openPayment(key){
   const [uid,id] = key.split('|');
   selectedPayment = state.payments.find(x=> x.uid===uid && x.id===id);
   if(!selectedPayment) return;
-  document.getElementById('paymentReviewProof').innerHTML = `<img src="${selectedPayment.proofDataUrl}" alt="Bukti transfer">`;
+
+  let detail = selectedPayment;
+  if(uid && id && !detail.proofDataUrl){
+    try {
+      const snap = await get(dbRefs.payment(uid,id));
+      if(snap.exists()) detail = { ...detail, ...snap.val(), uid, id };
+    } catch(e){ console.warn('Detail pembayaran tidak dapat dimuat', e); }
+  }
+  selectedPayment = detail;
+
+  const proofEl = document.getElementById('paymentReviewProof');
+  proofEl.innerHTML = detail.proofDataUrl
+    ? `<img src="${detail.proofDataUrl}" alt="Bukti transfer">`
+    : '<div class="empty">Bukti transfer tidak ditemukan pada data ini.</div>';
   document.getElementById('paymentReviewMeta').innerHTML = `
-    <div class="reco-card"><b>Peserta</b><small>${selectedPayment.participantName}<br>${selectedPayment.participantEmail}</small></div>
-    <div class="reco-card"><b>Pengirim</b><small>${selectedPayment.senderName} • ${selectedPayment.senderBank}</small></div>
-    <div class="reco-card"><b>Nominal</b><small>${rupiah(selectedPayment.amount)}</small></div>
-    <div class="reco-card"><b>Status</b><small>${selectedPayment.status}</small></div>`;
-  document.getElementById('reviewNote').value = selectedPayment.note || '';
+    <div class="reco-card"><b>Peserta</b><small>${detail.participantName || participantNameFor(uid, detail.participantEmail)}<br>${detail.participantEmail || participantEmailFor(uid)}</small></div>
+    <div class="reco-card"><b>Pengirim</b><small>${detail.senderName || '-'} • ${detail.senderBank || '-'}</small></div>
+    <div class="reco-card"><b>Nominal</b><small>${rupiah(detail.amount)}</small></div>
+    <div class="reco-card"><b>Dikirim</b><small>${formatDateTime(detail.createdAt)}</small></div>
+    <div class="reco-card"><b>Status</b><small>${detail.status || 'pending'}</small></div>`;
+  document.getElementById('reviewNote').value = detail.note || '';
   toggleModal(document.getElementById('paymentModal'), true);
 }
 
 document.getElementById('closePaymentModal')?.addEventListener('click', ()=> toggleModal(document.getElementById('paymentModal'), false));
 document.getElementById('paymentModal')?.addEventListener('click', e=> { if(e.target.id === 'paymentModal') toggleModal(document.getElementById('paymentModal'), false); });
-
 document.getElementById('approvePaymentBtn')?.addEventListener('click', ()=> handlePaymentDecision('approved'));
 document.getElementById('rejectPaymentBtn')?.addEventListener('click', ()=> handlePaymentDecision('rejected'));
 
 async function handlePaymentDecision(status){
   if(!selectedPayment) return;
+  if(!selectedPayment.uid || !selectedPayment.id){
+    alert('Data pembayaran lama ini belum memiliki UID peserta sehingga belum dapat diverifikasi otomatis.');
+    return;
+  }
   const note = document.getElementById('reviewNote').value.trim();
-  await update(dbRefs.payment(selectedPayment.uid, selectedPayment.id), { status, note, reviewedAt: Date.now(), reviewedBy: state.profile.name || 'Admin' });
-  if(status === 'approved') await set(dbRefs.access(selectedPayment.uid), { paymentApproved:true, approvedAt: Date.now(), approvedBy: state.profile.name || 'Admin' });
-  toggleModal(document.getElementById('paymentModal'), false);
+  const reviewedAt = Date.now();
+  const reviewedBy = state.profile.name || 'Admin';
+  try{
+    await update(dbRefs.payment(selectedPayment.uid, selectedPayment.id), { status, note, reviewedAt, reviewedBy });
+    try { await update(dbRefs.paymentIndex(selectedPayment.id), { status, note, reviewedAt, reviewedBy }); } catch(e){ console.warn('Index pembayaran tidak dapat diperbarui', e); }
+    if(status === 'approved'){
+      await set(dbRefs.access(selectedPayment.uid), { paymentApproved:true, approvedAt: reviewedAt, approvedBy: reviewedBy, paymentId:selectedPayment.id });
+    } else {
+      await set(dbRefs.access(selectedPayment.uid), { paymentApproved:false, rejectedAt: reviewedAt, rejectedBy: reviewedBy, paymentId:selectedPayment.id });
+    }
+    toggleModal(document.getElementById('paymentModal'), false);
+  }catch(err){
+    console.error(err);
+    alert('Gagal memperbarui pembayaran. Pastikan rules Firebase terbaru sudah dipublish.');
+  }
 }
 
 function renderParticipants(){
   const tbody = document.getElementById('participantsBody');
+  if(!tbody) return;
   if(!state.participants.length){ tbody.innerHTML = '<tr><td colspan="6">Belum ada peserta.</td></tr>'; return; }
   tbody.innerHTML = state.participants.map(p=> {
     const latestResult = state.results.filter(r=>r.uid===p.uid).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
@@ -117,10 +262,15 @@ document.getElementById('settingsForm')?.addEventListener('submit', async e=>{
 });
 
 function renderSettings(){
-  document.getElementById('settingPrice').value = state.settings.price || 0;
+  document.getElementById('settingPrice').value = state.settings.price || '';
   document.getElementById('settingBankName').value = state.settings.bankName || '';
   document.getElementById('settingAccountNumber').value = state.settings.accountNumber || '';
   document.getElementById('settingAccountName').value = state.settings.accountName || '';
+}
+
+function showPaymentsError(message){
+  const el = document.getElementById('paymentsLoadError');
+  if(el) setMessage(el, message, 'error');
 }
 
 async function init(){
@@ -130,18 +280,36 @@ async function init(){
   onValue(dbRefs.settingsPublic(), snap => { state.settings = { ...defaultPublicSettings(), ...(snap.val() || {}) }; renderSettings(); });
   onValue(ref(db, 'users'), snap => {
     state.participants = Object.values(snap.val() || {}).filter(x=>x.role==='participant');
-    renderParticipants(); summarize();
+    renderParticipants(); summarize(); mergePaymentSources();
+  }, err=> console.error('users read failed', err));
+
+  // Sumber utama baru: indeks ringan agar dashboard pembayaran cepat dan stabil.
+  onValue(dbRefs.paymentIndexRoot(), snap => {
+    state.paymentIndex = Object.entries(snap.val() || {}).map(([id,val])=>({ id, paymentId:id, ...val }));
+    mergePaymentSources();
+    const el = document.getElementById('paymentsLoadError'); if(el) el.innerHTML = '';
+  }, err=>{
+    console.warn('paymentIndex read failed', err);
+    showPaymentsError('Indeks pembayaran belum dapat dibaca. Dashboard akan mencoba membaca data konfirmasi lama. Publish database.rules.json terbaru agar antrean admin bekerja optimal.');
   });
+
+  // Kompatibilitas semua data lama + backup bila paymentIndex belum ada.
   onValue(ref(db, 'payments'), snap => {
-    const raw = snap.val() || {};
-    state.payments = Object.entries(raw).flatMap(([uid, group]) => Object.entries(group || {}).map(([id, val])=>({ uid, id, ...val }))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    renderPayments(); summarize(); renderParticipants();
+    state.legacyPayments = normalizePayments(snap.val() || {});
+    mergePaymentSources();
+  }, err=>{
+    console.error('payments read failed', err);
+    showPaymentsError('Data pembayaran tidak dapat dibaca oleh akun admin. Pastikan role akun adalah "admin" dan database.rules.json terbaru sudah dipublish.');
   });
+
   onValue(ref(db, 'results'), snap => {
     const raw = snap.val() || {};
     state.results = Object.entries(raw).flatMap(([uid, group]) => Object.entries(group || {}).map(([id, val])=>({ uid, id, name: val.participant?.name, ...val }))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     summarize(); renderParticipants();
-  });
+  }, err=> console.error('results read failed', err));
 }
 
-init().catch(console.error);
+init().catch(err=>{
+  console.error(err);
+  showPaymentsError('Dashboard admin gagal memuat data. Silakan login ulang dan pastikan rules Firebase terbaru sudah dipublish.');
+});

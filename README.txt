@@ -1,23 +1,16 @@
-KOMPAS JURUSAN CAHAYA PRO — V8
+KOMPAS JURUSAN PRO V9.1
+
+PERBAIKAN UTAMA:
+- Menu Pembayaran Admin sekarang membaca konfirmasi peserta dari dua sumber:
+  1) paymentIndex (indeks ringan dan cepat)
+  2) payments (kompatibilitas data lama)
+- Konfirmasi baru otomatis membuat paymentIndex tanpa menyimpan gambar bukti di indeks, sehingga dashboard admin lebih cepat.
+- Data pembayaran lama tetap tampil dan otomatis dibackfill ke paymentIndex oleh admin.
+- Admin dapat filter: Semua / Menunggu / Disetujui / Ditolak.
+- Saat klik Tinjau, bukti transfer detail diambil dari payments/{uid}/{paymentId}.
+- Approve / Reject memperbarui detail pembayaran, indeks admin, dan akses peserta.
+- Pesan error ditampilkan jika rules Firebase belum sesuai.
+
+PENTING:
+Publish database.rules.json terbaru ke Firebase Realtime Database Rules.
 Domain: kompasjurusan.cahayaapp.com
-Firebase: kompasjurusan-dc89f
-
-VERSI INI MEROMBAK UI/UX MENJADI LEBIH RINGAN DAN PROFESIONAL:
-- Lebih banyak whitespace dan jarak antar-komponen.
-- Warna terang, bersih, modern, dengan aksen teal dan kuning.
-- Landing page lebih seperti aplikasi edukasi nasional: hero + visual aplikasi + login card.
-- Dashboard peserta dan admin lebih ringan, tidak padat.
-- Sidebar desktop lebih ramping.
-- Navigasi mobile memakai bottom navigation seperti aplikasi native.
-- Tabel admin berubah menjadi card pada layar kecil sehingga tidak perlu scroll horizontal.
-- Halaman asesmen tetap satu pernyataan per layar.
-- Bukti transfer dikompres sebelum disimpan agar lebih ringan.
-- Login/register tetap satu pintu berdasarkan role.
-- 108 butir asesmen dipertahankan.
-
-PENTING SETELAH UPLOAD:
-1. Replace seluruh isi hosting/repository dengan folder V8.
-2. Publish database.rules.json terbaru di Firebase Realtime Database.
-3. Pastikan Email/Password aktif pada Firebase Authentication.
-4. Pastikan kompasjurusan.cahayaapp.com ada di Authorized Domains.
-5. Pastikan akun admin memiliki users/{uid}/role = "admin".

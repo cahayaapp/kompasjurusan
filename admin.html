@@ -52,8 +52,10 @@
       </section>
 
       <section id="section-payments" class="section">
-        <div class="topbar"><div class="page-title"><h1>Verifikasi Pembayaran</h1><p>Tinjau bukti transfer dan aktifkan akses peserta hanya dalam beberapa klik.</p></div></div>
-        <div class="card"><div class="table-wrap"><table><thead><tr><th>Peserta</th><th>Pengirim</th><th>Jumlah</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="paymentsBody"></tbody></table></div></div>
+        <div class="topbar"><div class="page-title"><h1>Verifikasi Pembayaran</h1><p>Semua konfirmasi peserta yang masuk tampil di sini secara otomatis.</p></div></div>
+        <div id="paymentsLoadError"></div>
+        <div class="payment-summary" id="paymentSummary"></div>
+        <div class="card"><div class="table-wrap"><table><thead><tr><th>Peserta</th><th>Pengirim</th><th>Jumlah</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="paymentsBody"><tr><td colspan="6"><div class="empty">Memuat konfirmasi pembayaran...</div></td></tr></tbody></table></div></div>
       </section>
 
       <section id="section-participants" class="section">
