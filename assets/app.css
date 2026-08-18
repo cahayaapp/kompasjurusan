@@ -262,3 +262,10 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 @media (max-width:520px){
   .tka-guidance-card{padding:15px;border-radius:19px}.tka-guidance-card.compact{padding:14px}.tka-plan-panel{padding:13px;border-radius:16px}.tka-subject-chip{font-size:.66rem;padding:8px 9px}.tka-major-row{padding:11px 12px}.tka-major-map-head{padding:12px}.tka-guidance-head h3{font-size:1.05rem}
 }
+
+/* V9.5 click-safety: area jawaban selalu berada di atas dekorasi dan tidak pernah terkunci */
+#questionArea{position:relative;z-index:6;pointer-events:auto}
+#questionArea .option-stack{position:relative;z-index:7;pointer-events:auto}
+#questionArea .option-btn{position:relative;z-index:8;pointer-events:auto!important;cursor:pointer!important;-webkit-tap-highlight-color:rgba(23,104,255,.12);touch-action:manipulation;user-select:none}
+#questionArea .option-btn *{pointer-events:none}
+#questionArea .option-btn:active{transform:scale(.992)}

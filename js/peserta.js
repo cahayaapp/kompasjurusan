@@ -1,4 +1,4 @@
-import { auth, dbRefs, get, set, update, push, ref, db, runTransaction } from './firebase.js';
+import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
 import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
 import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
 import { buildTkaGuidance, getMajorTkaInfo } from './tka-map.js';
@@ -12,9 +12,9 @@ const state = {
   draft: { index:0, answers:{} },
   results: [],
   payments: [],
-  transitioning: false,
-  assessmentSession: 0,
-  draftRevision: 0
+  assessmentSession: 1,
+  advanceToken: 0,
+  draftSessionId: ''
 };
 
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
@@ -32,25 +32,18 @@ closeMobilePanel?.addEventListener('click', ()=> mobilePanel.classList.remove('s
 
 document.getElementById('startAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); document.querySelector('.question-card-focus')?.scrollIntoView({behavior:'smooth', block:'start'}); });
 document.getElementById('resumeAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); document.querySelector('.question-card-focus')?.scrollIntoView({behavior:'smooth', block:'start'}); });
-document.getElementById('startRetestBtn')?.addEventListener('click', async ()=>{
+document.getElementById('startRetestBtn')?.addEventListener('click', ()=>{
   if(!state.access.paymentApproved) return alert('Akses asesmen belum aktif.');
   if(!confirm('Mulai asesmen dari awal? Progres sebelumnya akan diganti.')) return;
 
-  // Batalkan semua proses jawaban lama yang masih berjalan di belakang.
+  // Buat sesi baru secara lokal terlebih dahulu. Tidak menunggu jaringan.
   state.assessmentSession += 1;
-  state.transitioning = false;
-  state.draft = { index:0, answers:{} };
+  state.advanceToken += 1;
+  state.draftSessionId = `session-${Date.now()}-${state.assessmentSession}`;
+  state.draft = { index:0, answers:{}, sessionId: state.draftSessionId, updatedAt: Date.now() };
   renderQuestion();
-
-  try{
-    await saveDraft();
-    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Asesmen baru siap</span>`;
-  }catch(err){
-    console.error('Gagal mereset asesmen:', err);
-    state.transitioning = false;
-    renderQuestion();
-    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot error"></span>Gagal menyimpan reset. Coba lagi.</span>`;
-  }
+  setSaveState('saved', 'Asesmen baru siap');
+  persistDraftSnapshot(state.draft);
 });
 
 function activateSection(id){
@@ -181,6 +174,46 @@ document.getElementById('profileForm')?.addEventListener('submit', async e=>{
   setMessage(document.getElementById('profileMsg'), 'Profil berhasil disimpan.', 'success');
 });
 
+function setSaveState(kind='saved', text='Tersimpan otomatis'){
+  const el = document.getElementById('saveStateText');
+  if(!el) return;
+  el.innerHTML = `<span class="save-indicator"><span class="dot ${kind}"></span>${text}</span>`;
+}
+
+function normalizeDraft(raw){
+  const data = raw && typeof raw === 'object' ? raw : {};
+  return {
+    index: Number.isFinite(Number(data.index)) ? Number(data.index) : 0,
+    answers: data.answers && typeof data.answers === 'object' ? { ...data.answers } : {},
+    sessionId: data.sessionId || state.draftSessionId || '',
+    updatedAt: Number(data.updatedAt || 0)
+  };
+}
+
+function draftSnapshot(){
+  return {
+    index: Number(state.draft.index || 0),
+    answers: { ...(state.draft.answers || {}) },
+    sessionId: state.draft.sessionId || state.draftSessionId || `session-${Date.now()}-${state.assessmentSession}`,
+    updatedAt: Date.now()
+  };
+}
+
+function persistDraftSnapshot(snapshot){
+  const payload = {
+    index: Number(snapshot.index || 0),
+    answers: { ...(snapshot.answers || {}) },
+    sessionId: snapshot.sessionId || state.draftSessionId || '',
+    updatedAt: Number(snapshot.updatedAt || Date.now())
+  };
+  // Firebase Realtime Database akan mengantrekan write. UI tidak boleh menunggu jaringan.
+  set(dbRefs.draft(state.user.uid), payload).catch(err=>{
+    console.error('Gagal menyimpan progres:', err);
+    // Jangan mengunci pilihan. Hanya beri status bahwa sinkronisasi belum berhasil.
+    setSaveState('error', 'Belum tersinkron. Jawaban tetap bisa dipilih.');
+  });
+}
+
 function renderQuestion(){
   const answered = Object.keys(state.draft.answers || {}).length;
   document.getElementById('assessmentCount').textContent = QUESTIONS.length;
@@ -196,130 +229,97 @@ function renderQuestion(){
     document.getElementById('nextBtn').textContent = 'Pilih jawaban dulu';
     return;
   }
-  const idx = Math.max(0, Math.min(state.draft.index || 0, QUESTIONS.length - 1));
+
+  const idx = Math.max(0, Math.min(Number(state.draft.index || 0), QUESTIONS.length - 1));
   state.draft.index = idx;
   const q = QUESTIONS[idx];
   const val = Number(state.draft.answers?.[q.id] || 0);
+
   document.getElementById('questionCount').textContent = `${idx+1}/${QUESTIONS.length}`;
   document.getElementById('focusQuestionNumber').textContent = `${idx+1}`;
   document.getElementById('questionSection').textContent = QUESTION_SECTIONS[q.section] || q.section;
   document.getElementById('questionProgressFill').style.width = `${((idx+1)/QUESTIONS.length)*100}%`;
-  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>${val ? 'Jawaban tersimpan' : 'Menunggu jawaban'}</span>`;
+  setSaveState(val ? 'saved' : '', val ? 'Jawaban tersimpan' : 'Menunggu jawaban');
+
   document.getElementById('questionArea').innerHTML = `
     <div class="question-intro-line">Butir ${idx+1} dari ${QUESTIONS.length}</div>
     <div class="question-title">${q.prompt}</div>
-    <div class="question-helper">Pilih satu jawaban yang paling menggambarkan dirimu. Setelah dipilih, sistem akan menyimpan dan berpindah otomatis.</div>
+    <div class="question-helper">Pilih satu jawaban yang paling menggambarkan dirimu. Setelah dipilih, butir berikutnya akan muncul otomatis.</div>
     <div class="option-stack">
       ${Object.entries(SCALE_LABELS).map(([score, meta])=>`
-        <button class="option-btn ${Number(score)===val?'selected':''}" data-answer="${score}" ${state.transitioning ? 'disabled' : ''}>
+        <button type="button" class="option-btn ${Number(score)===val?'selected':''}" data-answer="${score}">
           <div class="option-score">${score}</div>
           <div class="option-copy"><b>${meta.title}</b><small>${meta.desc}</small></div>
         </button>
       `).join('')}
     </div>`;
-  document.querySelectorAll('[data-answer]').forEach(btn=> btn.addEventListener('click', ()=> chooseAnswer(q.id, Number(btn.dataset.answer))));
-  document.getElementById('prevBtn').disabled = idx === 0 || state.transitioning;
-  document.getElementById('nextBtn').disabled = !val || state.transitioning;
+
+  document.querySelectorAll('#questionArea [data-answer]').forEach(btn=>{
+    btn.addEventListener('click', ()=> chooseAnswer(q.id, Number(btn.dataset.answer), idx));
+  });
+
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = !val;
   document.getElementById('nextBtn').textContent = val ? (idx >= QUESTIONS.length - 1 ? 'Selesaikan asesmen' : 'Lanjut ke berikutnya →') : 'Pilih jawaban dulu';
 }
 
-async function chooseAnswer(id, score){
-  if(state.transitioning) return;
+function chooseAnswer(id, score, indexAtClick){
+  const currentQuestion = QUESTIONS[state.draft.index];
+  if(!currentQuestion || currentQuestion.id !== id || Number(state.draft.index) !== Number(indexAtClick)) return;
 
-  const sessionAtStart = state.assessmentSession;
-  const indexAtStart = state.draft.index;
-  state.transitioning = true;
+  const sessionAtClick = state.assessmentSession;
+  const token = ++state.advanceToken;
+
+  // Jawaban langsung diterapkan ke UI. Tidak pernah menunggu jaringan.
   state.draft.answers[id] = score;
+  if(!state.draft.sessionId){
+    state.draftSessionId = state.draftSessionId || `session-${Date.now()}-${state.assessmentSession}`;
+    state.draft.sessionId = state.draftSessionId;
+  }
   renderQuestion();
-  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saving"></span>Menyimpan jawaban...</span>`;
+  setSaveState('saving', 'Menyimpan otomatis…');
+  persistDraftSnapshot(draftSnapshot());
 
-  try{
-    await saveDraft();
+  // Perpindahan otomatis berbasis state lokal, sehingga koneksi lambat tidak membuat tombol macet.
+  window.setTimeout(()=>{
+    if(sessionAtClick !== state.assessmentSession || token !== state.advanceToken) return;
+    if(Number(state.draft.index) !== Number(indexAtClick)) return;
+    if(Number(state.draft.answers?.[id] || 0) < 1) return;
 
-    // Bila pengguna sudah menekan Mulai dari Awal, proses lama berhenti di sini.
-    if(sessionAtStart !== state.assessmentSession) return;
-
-    const isLast = indexAtStart >= QUESTIONS.length - 1;
-    if(isLast){
-      document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Menyelesaikan asesmen...</span>`;
-      state.transitioning = false;
-      await finalizeAssessment();
+    if(indexAtClick >= QUESTIONS.length - 1){
+      setSaveState('saved', 'Semua jawaban terisi');
+      finalizeAssessment();
       return;
     }
 
-    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Tersimpan • pindah ke butir berikutnya</span>`;
-    await new Promise(resolve => setTimeout(resolve, 260));
-
-    if(sessionAtStart !== state.assessmentSession) return;
-
-    // Hanya maju bila masih berada pada butir yang sama. Ini mencegah proses lama
-    // melompati soal setelah reset / navigasi lain.
-    if(state.draft.index === indexAtStart){
-      state.draft.index = indexAtStart + 1;
-      await saveDraft();
-    }
-  }catch(err){
-    console.error('Gagal menyimpan jawaban:', err);
-    if(sessionAtStart === state.assessmentSession){
-      document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot error"></span>Jawaban belum tersimpan. Silakan pilih lagi.</span>`;
-    }
-  }finally{
-    if(sessionAtStart === state.assessmentSession){
-      state.transitioning = false;
-      renderQuestion();
-    }
-  }
+    state.draft.index = indexAtClick + 1;
+    renderQuestion();
+    setSaveState('saved', 'Tersimpan otomatis');
+    persistDraftSnapshot(draftSnapshot());
+  }, 220);
 }
 
-async function saveDraft(){
-  // Revision membuat write lama tidak boleh menimpa reset / progres yang lebih baru.
-  const revision = Math.max(
-    Number(state.draftRevision || 0),
-    Number(state.draft?.revision || 0),
-    Date.now()
-  ) + 1;
-  state.draftRevision = revision;
-  state.draft.revision = revision;
-
-  const payload = {
-    index: Number(state.draft.index || 0),
-    answers: { ...(state.draft.answers || {}) },
-    revision,
-    updatedAt: Date.now()
-  };
-
-  const result = await runTransaction(dbRefs.draft(state.user.uid), current => {
-    const currentRevision = Number(current?.revision || 0);
-    if(currentRevision > revision) return;
-    return payload;
-  }, { applyLocally: false });
-
-  return result;
-}
-
-document.getElementById('prevBtn')?.addEventListener('click', async ()=>{
-  if(state.transitioning || state.draft.index <= 0) return;
-  state.assessmentSession += 1;
-  state.transitioning = false;
+document.getElementById('prevBtn')?.addEventListener('click', ()=>{
+  if(state.draft.index <= 0) return;
+  state.advanceToken += 1;
   state.draft.index -= 1;
-  try{ await saveDraft(); }catch(err){ console.error(err); }
   renderQuestion();
+  persistDraftSnapshot(draftSnapshot());
 });
-document.getElementById('nextBtn')?.addEventListener('click', async ()=>{
-  if(state.transitioning) return;
-  const current = QUESTIONS[state.draft.index];
+
+document.getElementById('nextBtn')?.addEventListener('click', ()=>{
+  const idx = Number(state.draft.index || 0);
+  const current = QUESTIONS[idx];
   const hasAnswer = current && Number(state.draft.answers?.[current.id] || 0) > 0;
   if(!hasAnswer){
-    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot error"></span>Jawab butir ini terlebih dahulu</span>`;
+    setSaveState('error', 'Jawab butir ini terlebih dahulu');
     return;
   }
-  if(state.draft.index >= QUESTIONS.length - 1){ await finalizeAssessment(); return; }
-
-  state.assessmentSession += 1;
-  state.transitioning = false;
-  state.draft.index += 1;
-  try{ await saveDraft(); }catch(err){ console.error(err); }
+  state.advanceToken += 1;
+  if(idx >= QUESTIONS.length - 1){ finalizeAssessment(); return; }
+  state.draft.index = idx + 1;
   renderQuestion();
+  persistDraftSnapshot(draftSnapshot());
 });
 
 async function finalizeAssessment(){
@@ -332,7 +332,10 @@ async function finalizeAssessment(){
   const resultRef = push(dbRefs.resultsRoot(state.user.uid));
   await set(resultRef, { ...result, createdAt: Date.now() });
   state.results.unshift({ id: resultRef.key, ...result });
-  state.draft = { index:0, answers:{} };
+  state.assessmentSession += 1;
+  state.advanceToken += 1;
+  state.draftSessionId = `session-${Date.now()}-${state.assessmentSession}`;
+  state.draft = { index:0, answers:{}, sessionId:state.draftSessionId, updatedAt:Date.now() };
   await set(dbRefs.draft(state.user.uid), state.draft);
   renderHome(); renderHistory(); renderQuestion();
   showResult(result);
@@ -464,7 +467,15 @@ async function init(){
 
   listen(dbRefs.settingsPublic(), data => { state.settings = { ...defaultPublicSettings(), ...(data || {}) }; renderHome(); renderPaymentSection(); });
   listen(dbRefs.access(user.uid), data => { state.access = data || { paymentApproved:false }; renderHome(); renderPaymentSection(); renderQuestion(); });
-  listen(dbRefs.draft(user.uid), data => { state.draft = data || { index:0, answers:{} }; state.draftRevision = Math.max(state.draftRevision, Number(state.draft?.revision || 0)); renderHome(); renderQuestion(); });
+  listen(dbRefs.draft(user.uid), data => {
+    const incoming = normalizeDraft(data);
+    // Abaikan snapshot sesi lama bila pengguna baru saja membuat asesmen baru.
+    if(state.draftSessionId && incoming.sessionId && incoming.sessionId !== state.draftSessionId) return;
+    if(incoming.sessionId) state.draftSessionId = incoming.sessionId;
+    state.draft = incoming;
+    renderHome();
+    renderQuestion();
+  });
   listen(dbRefs.paymentRoot(user.uid), data => {
     state.payments = Object.entries(data || {}).map(([id,val])=>({ id, ...val })).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     renderPaymentSection();
