@@ -1,4 +1,4 @@
-import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
+import { auth, dbRefs, get, set, update, push, ref, db, runTransaction } from './firebase.js';
 import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
 import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
 import { buildTkaGuidance, getMajorTkaInfo } from './tka-map.js';
@@ -12,7 +12,9 @@ const state = {
   draft: { index:0, answers:{} },
   results: [],
   payments: [],
-  transitioning: false
+  transitioning: false,
+  assessmentSession: 0,
+  draftRevision: 0
 };
 
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
@@ -32,10 +34,22 @@ document.getElementById('startAssessmentBtn')?.addEventListener('click', ()=>{ a
 document.getElementById('resumeAssessmentBtn')?.addEventListener('click', ()=>{ activateSection('section-assessment'); document.querySelector('.question-card-focus')?.scrollIntoView({behavior:'smooth', block:'start'}); });
 document.getElementById('startRetestBtn')?.addEventListener('click', async ()=>{
   if(!state.access.paymentApproved) return alert('Akses asesmen belum aktif.');
-  if(confirm('Mulai asesmen dari awal? Progres sebelumnya akan diganti.')){
-    state.draft = { index:0, answers:{} };
-    await set(dbRefs.draft(state.user.uid), state.draft);
+  if(!confirm('Mulai asesmen dari awal? Progres sebelumnya akan diganti.')) return;
+
+  // Batalkan semua proses jawaban lama yang masih berjalan di belakang.
+  state.assessmentSession += 1;
+  state.transitioning = false;
+  state.draft = { index:0, answers:{} };
+  renderQuestion();
+
+  try{
+    await saveDraft();
+    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Asesmen baru siap</span>`;
+  }catch(err){
+    console.error('Gagal mereset asesmen:', err);
+    state.transitioning = false;
     renderQuestion();
+    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot error"></span>Gagal menyimpan reset. Coba lagi.</span>`;
   }
 });
 
@@ -211,33 +225,84 @@ function renderQuestion(){
 
 async function chooseAnswer(id, score){
   if(state.transitioning) return;
+
+  const sessionAtStart = state.assessmentSession;
+  const indexAtStart = state.draft.index;
   state.transitioning = true;
   state.draft.answers[id] = score;
+  renderQuestion();
   document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saving"></span>Menyimpan jawaban...</span>`;
-  renderQuestion();
-  await saveDraft();
-  const isLast = state.draft.index >= QUESTIONS.length - 1;
-  if(isLast){
-    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Menyelesaikan asesmen...</span>`;
-    state.transitioning = false;
-    await finalizeAssessment();
-    return;
+
+  try{
+    await saveDraft();
+
+    // Bila pengguna sudah menekan Mulai dari Awal, proses lama berhenti di sini.
+    if(sessionAtStart !== state.assessmentSession) return;
+
+    const isLast = indexAtStart >= QUESTIONS.length - 1;
+    if(isLast){
+      document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Menyelesaikan asesmen...</span>`;
+      state.transitioning = false;
+      await finalizeAssessment();
+      return;
+    }
+
+    document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Tersimpan • pindah ke butir berikutnya</span>`;
+    await new Promise(resolve => setTimeout(resolve, 260));
+
+    if(sessionAtStart !== state.assessmentSession) return;
+
+    // Hanya maju bila masih berada pada butir yang sama. Ini mencegah proses lama
+    // melompati soal setelah reset / navigasi lain.
+    if(state.draft.index === indexAtStart){
+      state.draft.index = indexAtStart + 1;
+      await saveDraft();
+    }
+  }catch(err){
+    console.error('Gagal menyimpan jawaban:', err);
+    if(sessionAtStart === state.assessmentSession){
+      document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot error"></span>Jawaban belum tersimpan. Silakan pilih lagi.</span>`;
+    }
+  }finally{
+    if(sessionAtStart === state.assessmentSession){
+      state.transitioning = false;
+      renderQuestion();
+    }
   }
-  document.getElementById('saveStateText').innerHTML = `<span class="save-indicator"><span class="dot saved"></span>Tersimpan • pindah ke butir berikutnya</span>`;
-  await new Promise(resolve => setTimeout(resolve, 320));
-  state.draft.index += 1;
-  await saveDraft();
-  state.transitioning = false;
-  renderQuestion();
 }
+
 async function saveDraft(){
-  await set(dbRefs.draft(state.user.uid), { index: state.draft.index, answers: state.draft.answers, updatedAt: Date.now() });
+  // Revision membuat write lama tidak boleh menimpa reset / progres yang lebih baru.
+  const revision = Math.max(
+    Number(state.draftRevision || 0),
+    Number(state.draft?.revision || 0),
+    Date.now()
+  ) + 1;
+  state.draftRevision = revision;
+  state.draft.revision = revision;
+
+  const payload = {
+    index: Number(state.draft.index || 0),
+    answers: { ...(state.draft.answers || {}) },
+    revision,
+    updatedAt: Date.now()
+  };
+
+  const result = await runTransaction(dbRefs.draft(state.user.uid), current => {
+    const currentRevision = Number(current?.revision || 0);
+    if(currentRevision > revision) return;
+    return payload;
+  }, { applyLocally: false });
+
+  return result;
 }
 
 document.getElementById('prevBtn')?.addEventListener('click', async ()=>{
-  if(state.draft.index <= 0) return;
+  if(state.transitioning || state.draft.index <= 0) return;
+  state.assessmentSession += 1;
+  state.transitioning = false;
   state.draft.index -= 1;
-  await saveDraft();
+  try{ await saveDraft(); }catch(err){ console.error(err); }
   renderQuestion();
 });
 document.getElementById('nextBtn')?.addEventListener('click', async ()=>{
@@ -249,8 +314,11 @@ document.getElementById('nextBtn')?.addEventListener('click', async ()=>{
     return;
   }
   if(state.draft.index >= QUESTIONS.length - 1){ await finalizeAssessment(); return; }
+
+  state.assessmentSession += 1;
+  state.transitioning = false;
   state.draft.index += 1;
-  await saveDraft();
+  try{ await saveDraft(); }catch(err){ console.error(err); }
   renderQuestion();
 });
 
@@ -396,7 +464,7 @@ async function init(){
 
   listen(dbRefs.settingsPublic(), data => { state.settings = { ...defaultPublicSettings(), ...(data || {}) }; renderHome(); renderPaymentSection(); });
   listen(dbRefs.access(user.uid), data => { state.access = data || { paymentApproved:false }; renderHome(); renderPaymentSection(); renderQuestion(); });
-  listen(dbRefs.draft(user.uid), data => { state.draft = data || { index:0, answers:{} }; renderHome(); renderQuestion(); });
+  listen(dbRefs.draft(user.uid), data => { state.draft = data || { index:0, answers:{} }; state.draftRevision = Math.max(state.draftRevision, Number(state.draft?.revision || 0)); renderHome(); renderQuestion(); });
   listen(dbRefs.paymentRoot(user.uid), data => {
     state.payments = Object.entries(data || {}).map(([id,val])=>({ id, ...val })).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     renderPaymentSection();

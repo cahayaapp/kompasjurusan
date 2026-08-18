@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js';
-import { getDatabase, ref, get, set, update, push, onValue, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js';
+import { getDatabase, ref, get, set, update, push, onValue, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyAyxH4C8mQdHnP7AnKuMGEiop9RxnuxIr8',
@@ -16,7 +16,7 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 
-export { ref, get, set, update, push, onValue, onAuthStateChanged, signOut, serverTimestamp };
+export { ref, get, set, update, push, onValue, onAuthStateChanged, signOut, serverTimestamp, runTransaction };
 
 export const dbRefs = {
   user: uid => ref(db, `users/${uid}`),
