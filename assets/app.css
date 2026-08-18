@@ -269,3 +269,8 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 #questionArea .option-btn{position:relative;z-index:8;pointer-events:auto!important;cursor:pointer!important;-webkit-tap-highlight-color:rgba(23,104,255,.12);touch-action:manipulation;user-select:none}
 #questionArea .option-btn *{pointer-events:none}
 #questionArea .option-btn:active{transform:scale(.992)}
+
+/* V9.6 — PDF report actions */
+.report-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px}.result-download-actions{align-items:center}.result-download-actions .btn{box-shadow:none}
+#section-results .table-wrap td:last-child,#section-participants .table-wrap td:last-child{white-space:nowrap}
+@media(max-width:760px){.report-modal-actions{justify-content:stretch}.report-modal-actions .btn{width:100%}.result-download-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.result-download-actions .btn{width:100%}}

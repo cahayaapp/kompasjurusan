@@ -2,6 +2,7 @@ import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
 import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
 import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
 import { buildTkaGuidance, getMajorTkaInfo } from './tka-map.js';
+import { downloadAssessmentPdf } from './report-pdf.js';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
@@ -14,7 +15,8 @@ const state = {
   payments: [],
   assessmentSession: 1,
   advanceToken: 0,
-  draftSessionId: ''
+  draftSessionId: '',
+  currentResult: null
 };
 
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
@@ -81,6 +83,8 @@ function renderHome(){
     return;
   }
   wrap.innerHTML = renderResultCard(state.results[0], true);
+  wrap.querySelectorAll('[data-result]').forEach(btn=> btn.addEventListener('click', ()=> showResult(state.results.find(x=>x.id===btn.dataset.result))));
+  bindResultPdfButtons(wrap);
 }
 
 function renderPaymentSection(){
@@ -423,7 +427,10 @@ function renderResultCard(result, compact=false){
     </div>
     <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     ${renderTkaGuidance(result, true)}
-    ${compact ? '' : `<div class="inline-actions" style="margin-top:18px"><button class="btn btn-primary btn-sm" data-open-report="${result.id || ''}">Lihat detail</button></div>`}
+    <div class="inline-actions result-download-actions" style="margin-top:18px">
+      ${compact ? `<button class="btn btn-secondary btn-sm" data-result="${result.id || ''}">Lihat detail</button>` : `<button class="btn btn-secondary btn-sm" data-open-report="${result.id || ''}">Lihat detail</button>`}
+      <button class="btn btn-primary btn-sm" data-download-result="${result.id || ''}">⬇ Unduh PDF Resmi</button>
+    </div>
   </div>`;
 }
 
@@ -434,15 +441,18 @@ function renderHistory(){
   wrap.innerHTML = state.results.map(item=>`
     <div class="history-item">
       <div><strong>${item.recommendations?.[0]?.cluster || 'Hasil asesmen'}</strong><small>${formatDateTime(item.createdAt)} • ${item.topRiasec?.map(x=>x.code).join('-')} • ${item.summaryNarrative}</small></div>
-      <div class="inline-actions"><span class="badge info">${item.riasecChart?.[0]?.percent || 0}%</span><button class="btn btn-secondary btn-sm" data-result="${item.id}">Lihat</button></div>
+      <div class="inline-actions"><span class="badge info">${item.riasecChart?.[0]?.percent || 0}%</span><button class="btn btn-secondary btn-sm" data-result="${item.id}">Lihat</button><button class="btn btn-primary btn-sm" data-download-result="${item.id}">⬇ PDF</button></div>
     </div>
   `).join('');
   wrap.querySelectorAll('[data-result]').forEach(btn=> btn.addEventListener('click', ()=> showResult(state.results.find(x=>x.id===btn.dataset.result))));
+  bindResultPdfButtons(wrap);
 }
 
 function showResult(result){
   if(!result) return;
+  state.currentResult = result;
   document.getElementById('resultModalBody').innerHTML = `
+    <div class="report-modal-actions"><button class="btn btn-primary btn-sm" data-download-current>⬇ Unduh Laporan PDF</button></div>
     <div class="result-hero">
       <div class="result-score-box"><small>Profil RIASEC dominan</small><b>${result.topRiasec.map(x=>`${x.label} (${x.code})`).join(' • ')}</b><div style="color:#fff4cc;line-height:1.7">${result.topRiasec.map(x=>x.description).join(' ')}</div></div>
       <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${result.recommendations[0].cluster}</b><div style="color:#fff4cc;line-height:1.7">${result.recommendations[0].majors.join(', ')}</div></div>
@@ -458,6 +468,37 @@ function showResult(result){
     </div>
     <div class="card" style="margin-top:18px"><div class="panel-header"><div><h3>Rekomendasi rumpun studi</h3><p>${result.summaryNarrative}</p></div></div><div class="reco-list">${result.recommendations.map(item=>`<div class="reco-card result-reco-card"><b>${item.cluster} — ${item.percent}% cocok</b><small>${item.majors.join(', ')}<br>${item.reasons.join(' ')}</small>${renderRecommendationTka(item)}</div>`).join('')}</div></div>`;
   toggleModal(document.getElementById('resultModal'), true);
+  bindResultPdfButtons(document.getElementById('resultModalBody'));
+}
+
+async function handlePdfDownload(result, button){
+  if(!result) return;
+  const original = button?.innerHTML;
+  try{
+    if(button){ button.disabled = true; button.innerHTML = 'Menyiapkan PDF...'; }
+    await downloadAssessmentPdf(result, state.profile || result.participant || {});
+  }catch(err){
+    console.error(err);
+    alert('PDF belum dapat dibuat. Silakan coba lagi.');
+  }finally{
+    if(button){ button.disabled = false; button.innerHTML = original; }
+  }
+}
+
+function bindResultPdfButtons(root=document){
+  root.querySelectorAll?.('[data-download-result]').forEach(btn=>{
+    if(btn.dataset.pdfBound) return;
+    btn.dataset.pdfBound='1';
+    btn.addEventListener('click', ()=>{
+      const result = state.results.find(x=>x.id===btn.dataset.downloadResult) || state.results[0];
+      handlePdfDownload(result, btn);
+    });
+  });
+  root.querySelectorAll?.('[data-download-current]').forEach(btn=>{
+    if(btn.dataset.pdfBound) return;
+    btn.dataset.pdfBound='1';
+    btn.addEventListener('click', ()=>handlePdfDownload(state.currentResult, btn));
+  });
 }
 
 async function init(){

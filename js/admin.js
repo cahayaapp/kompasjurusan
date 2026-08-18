@@ -2,6 +2,7 @@ import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
 import { defaultPublicSettings } from './data.js';
+import { downloadAssessmentPdf } from './report-pdf.js';
 
 const state = {
   user: null,
@@ -124,7 +125,10 @@ function summarize(){
     : '<span class="badge approved">Tidak ada antrean pembayaran</span>';
   const recentWrap = document.getElementById('recentResults');
   if(!state.results.length){ recentWrap.innerHTML = '<div class="empty">Belum ada hasil asesmen.</div>'; }
-  else recentWrap.innerHTML = state.results.slice(0,6).map(item=> `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${item.recommendations?.[0]?.cluster || '-'} • ${formatDateTime(item.createdAt)}</small></div><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-') || '-'}</span></div>`).join('');
+  else {
+    recentWrap.innerHTML = state.results.slice(0,6).map(item=> `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${item.recommendations?.[0]?.cluster || '-'} • ${formatDateTime(item.createdAt)}</small></div><div class="inline-actions"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-') || '-'}</span><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ PDF</button></div></div>`).join('');
+    bindAdminPdfButtons(recentWrap);
+  }
   renderPaymentSummary();
 }
 
@@ -234,7 +238,7 @@ async function handlePaymentDecision(status){
 function renderParticipants(){
   const tbody = document.getElementById('participantsBody');
   if(!tbody) return;
-  if(!state.participants.length){ tbody.innerHTML = '<tr><td colspan="6">Belum ada peserta.</td></tr>'; return; }
+  if(!state.participants.length){ tbody.innerHTML = '<tr><td colspan="7">Belum ada peserta.</td></tr>'; return; }
   tbody.innerHTML = state.participants.map(p=> {
     const latestResult = state.results.filter(r=>r.uid===p.uid).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
     const approved = state.payments.some(pay=> pay.uid===p.uid && pay.status === 'approved');
@@ -245,8 +249,59 @@ function renderParticipants(){
       <td data-label="Akses"><span class="badge ${approved ? 'approved' : 'pending'}">${approved ? 'Aktif' : 'Belum aktif'}</span></td>
       <td data-label="Hasil">${latestResult?.recommendations?.[0]?.cluster || '-'}</td>
       <td data-label="Tes terakhir">${formatDateTime(latestResult?.createdAt)}</td>
+      <td data-label="Laporan">${latestResult ? `<button class="btn btn-primary btn-sm" data-admin-pdf="${latestResult.uid}|${latestResult.id}">⬇ PDF</button>` : '-'}</td>
     </tr>`;
   }).join('');
+  bindAdminPdfButtons(tbody);
+}
+
+function participantForResult(result){
+  const p = state.participants.find(x=>x.uid===result?.uid) || {};
+  return { ...result?.participant, ...p, uid:result?.uid || p.uid || '' };
+}
+
+async function handleAdminPdf(result, button){
+  if(!result) return;
+  const old = button?.innerHTML;
+  try{
+    if(button){ button.disabled=true; button.innerHTML='Menyiapkan...'; }
+    await downloadAssessmentPdf(result, participantForResult(result), { filename:`hasil-kompas-jurusan-${(participantForResult(result).name||'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.pdf` });
+  }catch(err){
+    console.error(err);
+    alert('Laporan PDF belum dapat dibuat. Silakan coba lagi.');
+  }finally{
+    if(button){ button.disabled=false; button.innerHTML=old; }
+  }
+}
+
+function bindAdminPdfButtons(root=document){
+  root.querySelectorAll?.('[data-admin-pdf]').forEach(btn=>{
+    if(btn.dataset.pdfBound) return;
+    btn.dataset.pdfBound='1';
+    btn.addEventListener('click', ()=>{
+      const [uid,id] = btn.dataset.adminPdf.split('|');
+      handleAdminPdf(state.results.find(x=>x.uid===uid && x.id===id), btn);
+    });
+  });
+}
+
+function renderResults(){
+  const tbody=document.getElementById('resultsBody');
+  if(!tbody) return;
+  if(!state.results.length){ tbody.innerHTML='<tr><td colspan="6"><div class="empty">Belum ada hasil asesmen.</div></td></tr>'; return; }
+  tbody.innerHTML=state.results.map(item=>{
+    const p=participantForResult(item);
+    const top=item.recommendations?.[0]||{};
+    return `<tr>
+      <td data-label="Peserta"><strong>${p.name||'-'}</strong><small>${p.email||''}</small></td>
+      <td data-label="Tanggal">${formatDateTime(item.createdAt)}</td>
+      <td data-label="RIASEC"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-')||'-'}</span></td>
+      <td data-label="Rumpun">${top.cluster||'-'}</td>
+      <td data-label="Kecocokan"><strong>${top.percent||0}%</strong></td>
+      <td data-label="PDF"><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ Unduh PDF</button></td>
+    </tr>`;
+  }).join('');
+  bindAdminPdfButtons(tbody);
 }
 
 document.getElementById('settingsForm')?.addEventListener('submit', async e=>{
@@ -279,7 +334,7 @@ async function init(){
 
   onValue(dbRefs.settingsPublic(), snap => { state.settings = { ...defaultPublicSettings(), ...(snap.val() || {}) }; renderSettings(); });
   onValue(ref(db, 'users'), snap => {
-    state.participants = Object.values(snap.val() || {}).filter(x=>x.role==='participant');
+    state.participants = Object.entries(snap.val() || {}).map(([uid,val])=>({uid,...val})).filter(x=>x.role==='participant');
     renderParticipants(); summarize(); mergePaymentSources();
   }, err=> console.error('users read failed', err));
 
@@ -305,7 +360,7 @@ async function init(){
   onValue(ref(db, 'results'), snap => {
     const raw = snap.val() || {};
     state.results = Object.entries(raw).flatMap(([uid, group]) => Object.entries(group || {}).map(([id, val])=>({ uid, id, name: val.participant?.name, ...val }))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    summarize(); renderParticipants();
+    summarize(); renderParticipants(); renderResults();
   }, err=> console.error('results read failed', err));
 }
 

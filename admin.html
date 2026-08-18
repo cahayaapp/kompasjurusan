@@ -16,6 +16,7 @@
         <button class="active" type="button" data-section-target="section-dashboard"><span class="nav-icon">▦</span>Dashboard</button>
         <button type="button" data-section-target="section-payments"><span class="nav-icon">◫</span>Pembayaran</button>
         <button type="button" data-section-target="section-participants"><span class="nav-icon">◎</span>Peserta</button>
+        <button type="button" data-section-target="section-results"><span class="nav-icon">▤</span>Hasil Tes</button>
         <button type="button" data-section-target="section-settings"><span class="nav-icon">⚙</span>Pengaturan</button>
       </nav>
       <div class="sidebar-foot"><button class="btn btn-secondary btn-block" id="logoutBtn" type="button">Keluar</button></div>
@@ -60,7 +61,16 @@
 
       <section id="section-participants" class="section">
         <div class="topbar"><div class="page-title"><h1>Data Peserta</h1><p>Lihat status akses dan hasil terakhir setiap peserta.</p></div></div>
-        <div class="card"><div class="table-wrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Asal</th><th>Akses</th><th>Hasil Terbaru</th><th>Tes Terakhir</th></tr></thead><tbody id="participantsBody"></tbody></table></div></div>
+        <div class="card"><div class="table-wrap"><table><thead><tr><th>Nama</th><th>Kelas</th><th>Asal</th><th>Akses</th><th>Hasil Terbaru</th><th>Tes Terakhir</th><th>Laporan</th></tr></thead><tbody id="participantsBody"></tbody></table></div></div>
+      </section>
+
+
+      <section id="section-results" class="section">
+        <div class="topbar"><div class="page-title"><h1>Laporan Hasil Tes</h1><p>Unduh hasil asesmen peserta dalam format PDF profesional seperti laporan hasil psikotes, lengkap dengan data peserta, penjabaran hasil, rumpun studi, jurusan, dan rekomendasi mapel TKA.</p></div></div>
+        <div class="card">
+          <div class="panel-header"><div><h3>Semua Hasil Asesmen</h3><p>Pilih hasil tertentu untuk mengunduh laporan PDF resmi Kompas Jurusan.</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Peserta</th><th>Tanggal Tes</th><th>RIASEC</th><th>Rumpun Utama</th><th>Kecocokan</th><th>PDF</th></tr></thead><tbody id="resultsBody"><tr><td colspan="6"><div class="empty">Memuat hasil asesmen...</div></td></tr></tbody></table></div>
+        </div>
       </section>
 
       <section id="section-settings" class="section">
@@ -80,10 +90,11 @@
     </main>
   </div>
 
-  <nav class="mobile-bottom-nav four">
+  <nav class="mobile-bottom-nav">
     <button class="active" type="button" data-section-target="section-dashboard"><span>▦</span>Beranda</button>
     <button type="button" data-section-target="section-payments"><span>◫</span>Bayar</button>
     <button type="button" data-section-target="section-participants"><span>◎</span>Peserta</button>
+    <button type="button" data-section-target="section-results"><span>▤</span>Hasil</button>
     <button type="button" data-section-target="section-settings"><span>⚙</span>Atur</button>
   </nav>
 
