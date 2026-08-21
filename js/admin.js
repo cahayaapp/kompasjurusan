@@ -2,7 +2,8 @@ import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
 import { defaultPublicSettings } from './data.js';
-import { downloadAssessmentPdf } from './report-pdf.js?v=9.7';
+import { downloadAssessmentPdf } from './report-pdf.js?v=9.9';
+import { recommendationsForResult, getFitInterpretation } from './scoring.js?v=9.9';
 
 const state = {
   user: null,
@@ -127,7 +128,7 @@ function summarize(){
   const recentWrap = document.getElementById('recentResults');
   if(!state.results.length){ recentWrap.innerHTML = '<div class="empty">Belum ada hasil asesmen.</div>'; }
   else {
-    recentWrap.innerHTML = state.results.slice(0,6).map(item=> `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${item.recommendations?.[0]?.cluster || '-'} • ${formatDateTime(item.createdAt)}</small></div><div class="inline-actions"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-') || '-'}</span><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ PDF</button></div></div>`).join('');
+    recentWrap.innerHTML = state.results.slice(0,6).map(item=> { const topRec=recommendationsForResult(item,1)[0]; return `<div class="history-item"><div><strong>${item.name || item.participant?.name || '-'}</strong><small>${topRec?.cluster || 'Belum mencapai 60%'} • ${formatDateTime(item.createdAt)}</small></div><div class="inline-actions"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-') || '-'}</span><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ PDF</button></div></div>`; }).join('');
     bindAdminPdfButtons();
   }
   renderPaymentSummary();
@@ -248,7 +249,7 @@ function renderParticipants(){
       <td data-label="Kelas">${p.className || '-'}</td>
       <td data-label="Asal">${p.school || '-'}</td>
       <td data-label="Akses"><span class="badge ${approved ? 'approved' : 'pending'}">${approved ? 'Aktif' : 'Belum aktif'}</span></td>
-      <td data-label="Hasil">${latestResult?.recommendations?.[0]?.cluster || '-'}</td>
+      <td data-label="Hasil">${latestResult ? (recommendationsForResult(latestResult,1)[0]?.cluster || 'Belum mencapai 60%') : '-'}</td>
       <td data-label="Tes terakhir">${formatDateTime(latestResult?.createdAt)}</td>
       <td data-label="Laporan">${latestResult ? `<button class="btn btn-primary btn-sm" data-admin-pdf="${latestResult.uid}|${latestResult.id}">⬇ PDF</button>` : '-'}</td>
     </tr>`;
@@ -334,13 +335,14 @@ function renderResults(){
   if(!state.results.length){ tbody.innerHTML='<tr><td colspan="6"><div class="empty">Belum ada hasil asesmen.</div></td></tr>'; return; }
   tbody.innerHTML=state.results.map(item=>{
     const p=participantForResult(item);
-    const top=item.recommendations?.[0]||{};
+    const top=recommendationsForResult(item,1)[0];
+    const fit=top ? getFitInterpretation(top.percent) : null;
     return `<tr>
       <td data-label="Peserta"><strong>${p.name||'-'}</strong><small>${p.email||''}</small></td>
       <td data-label="Tanggal">${formatDateTime(item.createdAt)}</td>
       <td data-label="RIASEC"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-')||'-'}</span></td>
-      <td data-label="Rumpun">${top.cluster||'-'}</td>
-      <td data-label="Kecocokan"><strong>${top.percent||0}%</strong></td>
+      <td data-label="Rumpun">${top?.cluster||'<span class="badge pending">Belum mencapai 60%</span>'}</td>
+      <td data-label="Kecocokan">${top ? `<strong>${top.percent||0}%</strong><small>${fit.label}</small>` : '<strong>—</strong><small>Perlu eksplorasi</small>'}</td>
       <td data-label="PDF"><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ Unduh PDF</button></td>
     </tr>`;
   }).join('');

@@ -1,5 +1,6 @@
 import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js';
-import { labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=9.9';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=9.9';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -148,11 +149,11 @@ function drawParticipantCard(ctx,result,participant,y){
 
 function drawSummary(ctx,result,y){
   title(ctx,'Ringkasan Utama',60,y,32); y+=50;
-  const top=result?.topRiasec?.[0]||{}; const topRec=result?.recommendations?.[0]||{};
+  const top=result?.topRiasec?.[0]||{}; const topRec=recommendationsForResult(result,1)[0]||null; const relativeTop=relativeTopForResult(result,1)[0]||null;
   const cards=[
     {label:'Profil RIASEC Dominan',value:`${top.label||'-'} (${top.code||'-'})`,note:top.description||'Kecenderungan minat utama.'},
-    {label:'Rumpun Studi Terkuat',value:`${topRec.cluster||'-'}`,note:`Kesesuaian ${topRec.percent||0}% berdasarkan pola asesmen.`},
-    {label:'Jurusan Prioritas',value:(topRec.majors||[]).slice(0,3).join(', ')||'-',note:'Pilihan awal yang paling layak dieksplorasi lebih lanjut.'}
+    {label:'Rumpun Studi Terkuat',value:topRec ? `${topRec.cluster}` : 'Belum mencapai batas 60%',note:topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}` : `Arah relatif tertinggi: ${relativeTop?.cluster||'-'} (${relativeTop?.percent||0}%).`},
+    {label:'Jurusan Prioritas',value:topRec ? (topRec.majors||[]).slice(0,3).join(', ') : '-',note:topRec ? 'Pilihan awal yang paling layak dieksplorasi lebih lanjut.' : 'Belum ditetapkan sebagai rekomendasi utama.'}
   ];
   cards.forEach((c,i)=>{
     const x=60+i*374; rr(ctx,x,y,352,198,22,i===0?'#EEF5FF':i===1?'#EAFBFA':'#FFF7E6','#DCE7F4',2);
@@ -185,7 +186,7 @@ function drawInterpretation(ctx,result,y){
   rr(ctx,60,y,1120,250,24,'#F8FBFE','#DDE8F3',2);
   smallLabel(ctx,'Interpretasi Ringkas',88,y+24,C.blue);
   textBlock(ctx,result?.summaryNarrative||'Hasil asesmen menunjukkan kombinasi minat, gaya kerja, nilai hidup, dan kekuatan akademik yang dapat digunakan sebagai bahan eksplorasi arah studi.',88,y+60,1064,{size:21,weight:500,color:C.ink,lineHeight:1.45,maxLines:6});
-  font(ctx,16,600,C.muted); ctx.fillText('Catatan: gunakan hasil ini bersama pertimbangan rapor, pengalaman belajar, minat yang berkembang, dan konsultasi dengan pembimbing/orang tua.',88,y+205);
+  textBlock(ctx,`Catatan: skor kecocokan menunjukkan tingkat keselarasan profil dengan karakteristik rumpun studi, bukan probabilitas keberhasilan kuliah. Rekomendasi utama ditampilkan mulai ${RECOMMENDATION_MIN_PERCENT}%.`,88,y+195,1040,{size:15,weight:600,color:C.muted,lineHeight:1.25,maxLines:2});
 }
 
 function drawSectionBand(ctx,text,y,subtitle=''){
@@ -196,14 +197,93 @@ function drawSectionBand(ctx,text,y,subtitle=''){
   return y+112;
 }
 
+
+function drawAssessmentInfoPage(ctx,y){
+  const info=ASSESSMENT_INFO;
+  y=drawSectionBand(ctx,info.title,y,'Penjelasan asesmen dan alasan hasilnya penting dijadikan bahan pertimbangan.');
+
+  rr(ctx,60,y,1120,178,22,'#F3F8FE','#DDE8F4',2);
+  smallLabel(ctx,'Tentang Asesmen',86,y+22,C.blue);
+  textBlock(ctx,info.intro,86,y+54,1068,{size:18,weight:520,color:C.ink,lineHeight:1.42,maxLines:6});
+  y+=198;
+
+  title(ctx,info.importanceTitle,60,y,27); y+=40;
+  textBlock(ctx,info.importanceIntro,60,y,1120,{size:17,weight:500,color:C.muted,lineHeight:1.38,maxLines:4}); y+=72;
+  info.importancePoints.forEach((item,i)=>{
+    rr(ctx,60,y,1120,62,16,i%2===0?'#F8FBFE':'#F3F7FB','#E1EAF4',1);
+    rr(ctx,78,y+14,34,34,10,i===0?C.blue:i===1?C.cyan:i===2?C.gold:C.teal);
+    font(ctx,16,800,i===2?C.navy:C.white);ctx.fillText(String(i+1),89,y+22);
+    textBlock(ctx,item,130,y+13,1010,{size:16,weight:550,color:C.ink,lineHeight:1.26,maxLines:2});
+    y+=68;
+  });
+  rr(ctx,60,y,1120,118,18,'#FFF9EC','#F3D99A',1.5);
+  textBlock(ctx,info.importanceClosing,84,y+20,1072,{size:16,weight:550,color:C.ink,lineHeight:1.35,maxLines:4});
+  y+=140;
+
+  title(ctx,info.dimensionsTitle,60,y,27); y+=42;
+  const dimX=[60,630];
+  info.dimensions.forEach((item,i)=>{
+    const col=i%2,row=Math.floor(i/2),x=dimX[col],yy=y+row*184;
+    const fills=['#EEF5FF','#EFFBF9','#FFF8E9','#F4F0FF'];
+    const accents=[C.blue,C.teal,C.orange,'#6F55C9'];
+    rr(ctx,x,yy,550,164,20,fills[i], '#DDE7F2',1.5);
+    rr(ctx,x+20,yy+20,48,48,14,accents[i]);
+    font(ctx,18,800,C.white);ctx.fillText(`0${i+1}`,x+31,yy+32);
+    font(ctx,20,800,C.navy);ctx.fillText(item.title.replace(/^\d+\.\s*/,''),x+82,yy+22);
+    textBlock(ctx,item.text,x+82,yy+54,440,{size:14,weight:520,color:C.ink,lineHeight:1.34,maxLines:6});
+  });
+  y+=386;
+
+  return y;
+}
+
+function drawRiasecGuidePage(ctx,y){
+  const info=ASSESSMENT_INFO;
+  y=drawSectionBand(ctx,info.riasecTitle,y,'Enam kecenderungan minat dan cara membaca hasil asesmen dengan tepat.');
+  textBlock(ctx,info.riasecIntro,60,y,1120,{size:17,weight:500,color:C.muted,lineHeight:1.4,maxLines:3}); y+=68;
+  info.riasecTypes.forEach((item,i)=>{
+    const col=i%3,row=Math.floor(i/3),x=60+col*374,yy=y+row*116;
+    rr(ctx,x,yy,352,100,17,'#F8FBFE','#E1EAF4',1.3);
+    rr(ctx,x+16,yy+18,48,48,14,['#DCEBFF','#E1F8F2','#FFF0D9','#F0E7FF','#FFE8EB','#E9F0F4'][i]);
+    font(ctx,19,800,C.navy);ctx.fillText(item.code,x+31,yy+29);
+    font(ctx,17,800,C.ink);ctx.fillText(item.label,x+78,yy+15);
+    textBlock(ctx,item.description,x+78,yy+42,252,{size:14,weight:500,color:C.muted,lineHeight:1.28,maxLines:3});
+  });
+  y+=246;
+  return drawReadingGuide(ctx,y);
+}
+
+function drawReadingGuide(ctx,y){
+  const info=ASSESSMENT_INFO;
+  title(ctx,info.readingTitle,60,y,28); y+=46;
+  info.readingPoints.forEach((item,i)=>{
+    const h=86;
+    rr(ctx,60,y,1120,h,18,i%2===0?'#F7FAFE':'#F1F6FB','#DEE8F3',1.3);
+    rr(ctx,80,y+20,38,38,12,i===0?C.blue:i===1?C.green:i===2?C.orange:C.teal);
+    font(ctx,18,800,C.white);ctx.fillText('✓',91,y+27);
+    textBlock(ctx,item,136,y+15,1008,{size:16,weight:540,color:C.ink,lineHeight:1.34,maxLines:4});
+    y+=96;
+  });
+  rr(ctx,60,y,1120,120,20,C.navy);
+  smallLabel(ctx,'Prinsip Utama',86,y+18,'#9FE9E9');
+  textBlock(ctx,info.closing,86,y+50,1068,{size:18,weight:650,color:C.white,lineHeight:1.38,maxLines:4});
+  return y+140;
+}
+
 function drawStudyTable(ctx,result,y){
-  const recs=result?.recommendations||[];
+  const recs=recommendationsForResult(result,5);
   const cols=[60,125,380,780,1180];
   const widths=[65,255,400,400];
   const headers=['#','Rumpun Studi','Jurusan yang Direkomendasikan','Mapel Pilihan TKA yang Perlu Diperdalam'];
   rr(ctx,60,y,1120,58,16,C.navy);
   headers.forEach((h,i)=>{font(ctx,16,800,C.white);textBlock(ctx,h,cols[i]+12,y+18,widths[i]-24,{size:16,weight:800,color:C.white,lineHeight:1.1,maxLines:2});});
   y+=58;
+  if(!recs.length){
+    ctx.fillStyle='#F8FBFE';ctx.fillRect(60,y,1120,118);
+    font(ctx,20,800,C.navy);ctx.fillText(`Belum ada rumpun yang mencapai batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%.`,88,y+22);
+    textBlock(ctx,'Rumpun dengan skor di bawah batas tetap dapat digunakan sebagai arah eksplorasi relatif, tetapi tidak ditetapkan sebagai rekomendasi utama.',88,y+58,1040,{size:17,weight:500,color:C.muted,lineHeight:1.35,maxLines:3});
+    y+=118;
+  }
   recs.forEach((rec,idx)=>{
     const guidance=buildTkaGuidance([rec]);
     const subjects=(guidance.priorityElectives||[]).join(', ')||'Sesuaikan prodi spesifik';
@@ -214,13 +294,31 @@ function drawStudyTable(ctx,result,y){
     line(ctx,60,y+h,1180,y+h,'#DCE6F1',1);
     font(ctx,20,800,C.blue);ctx.fillText(String(idx+1),84,y+20);
     font(ctx,20,800,C.navy);ctx.fillText(`${rec.cluster||'-'}`,137,y+17);
-    font(ctx,16,700,C.green);ctx.fillText(`${rec.percent||0}% cocok`,137,y+48);
+    const fit=getFitInterpretation(rec.percent);
+    font(ctx,16,700,C.green);ctx.fillText(`${rec.percent||0}% • ${fit.label}`,137,y+48);
     textBlock(ctx,majors,392,y+17,widths[2]-26,{size:17,weight:600,color:C.ink,lineHeight:1.4,maxLines:6});
     textBlock(ctx,subjects,792,y+17,widths[3]-26,{size:17,weight:700,color:C.teal,lineHeight:1.4,maxLines:6});
     y+=h;
   });
   line(ctx,60,y,1180,y,'#C8D7E8',2);
   return y+18;
+}
+
+
+function drawAlternativeStudy(ctx,result,y){
+  const alternatives=alternativesForResult(result,3);
+  if(!alternatives.length) return y;
+  if(y>1430) return y;
+  title(ctx,'Alternatif Eksplorasi (50-59%)',60,y,25); y+=40;
+  textBlock(ctx,'Rumpun berikut tidak masuk rekomendasi utama, tetapi masih dapat dipertimbangkan sebagai eksplorasi tambahan.',60,y,1120,{size:16,color:C.muted,lineHeight:1.3}); y+=48;
+  alternatives.forEach((rec,idx)=>{
+    const h=58;
+    ctx.fillStyle=idx%2===0?'#FFF9EE':'#FFFCF5';ctx.fillRect(60,y,1120,h);
+    font(ctx,18,800,C.navy);ctx.fillText(`${rec.cluster}`,82,y+16);
+    font(ctx,17,800,C.orange);ctx.fillText(`${rec.percent}% • Alternatif`,680,y+16);
+    y+=h;
+  });
+  return y+14;
 }
 
 function drawMandatoryTka(ctx,result,y){
@@ -235,7 +333,7 @@ function drawMandatoryTka(ctx,result,y){
 }
 
 function drawTopClusterBreakdown(ctx,result,y){
-  const top=result?.recommendations?.[0];
+  const top=recommendationsForResult(result,1)[0];
   if(!top) return y;
   const g=buildTkaGuidance([top]);
   title(ctx,`Rincian Jurusan Prioritas - ${top.cluster}`,60,y,30); y+=48;
@@ -276,9 +374,9 @@ function drawDetailedScores(ctx,result,y){
 function drawNextSteps(ctx,result,y){
   rr(ctx,60,y,1120,340,24,C.navy);
   smallLabel(ctx,'Saran Tindak Lanjut',88,y+24,'#9FE9E9');
-  const top=result?.recommendations?.[0]; const g=buildTkaGuidance(top?[top]:[]);
+  const top=recommendationsForResult(result,1)[0]; const g=buildTkaGuidance(top?[top]:[]);
   const steps=[
-    `Eksplorasi lebih dalam 2-3 jurusan teratas pada rumpun ${top?.cluster||'yang direkomendasikan'}.`,
+    top ? `Eksplorasi lebih dalam 2-3 jurusan teratas pada rumpun ${top.cluster}.` : `Belum ada rumpun yang mencapai ${RECOMMENDATION_MIN_PERCENT}%; gunakan hasil sebagai bahan eksplorasi awal bersama pembimbing.`,
     `Untuk TKA, pertahankan mapel wajib: ${(TKA_REQUIRED||[]).join(', ')}.`,
     `Prioritaskan pendalaman mapel pilihan: ${(g.priorityElectives||[]).join(' dan ')||'sesuaikan dengan prodi target'}.`,
     'Bandingkan hasil asesmen dengan nilai rapor, pengalaman belajar, aktivitas yang paling dinikmati, dan target kampus.',
@@ -288,22 +386,29 @@ function drawNextSteps(ctx,result,y){
     rr(ctx,88,y+64+i*50,34,34,10,i<2?C.gold:C.cyan);font(ctx,17,800,C.navy);ctx.fillText(String(i+1),100,y+72+i*50);
     textBlock(ctx,s,140,y+67+i*50,980,{size:17,weight:550,color:C.white,lineHeight:1.3,maxLines:2});
   });
-  font(ctx,14,500,'#C6DEE5');ctx.fillText('Laporan ini adalah alat bantu eksplorasi pendidikan dan bukan pemeriksaan psikodiagnostik atau diagnosis klinis.',88,y+306);
+  font(ctx,14,500,'#C6DEE5');ctx.fillText('Laporan ini adalah alat bantu eksplorasi pendidikan. Persentase kecocokan bukan peluang sukses kuliah dan bukan diagnosis psikologis.',88,y+306);
 }
 
 async function buildCanvases(result,participant){
   const logo=await loadImage('assets/logo-icon.svg');
   const pages=[];
-  // Page 1
-  let p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,1,3,result,participant,logo);
+  const totalPages=5;
+  // Page 1 - hasil utama peserta
+  let p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,1,totalPages,result,participant,logo);
   let y=205; y=drawParticipantCard(p.ctx,result,participant,y); y=drawSummary(p.ctx,result,y); y=drawRiasec(p.ctx,result,y); drawInterpretation(p.ctx,result,y); drawFooter(p.ctx,1);
-  // Page 2
-  p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,2,3,result,participant,logo); y=205;
-  y=drawSectionBand(p.ctx,'Rekomendasi Rumpun Studi & Persiapan TKA',y,'Rumpun studi, jurusan, dan mapel pilihan yang perlu diperdalam untuk persiapan TKA.');
-  y=drawMandatoryTka(p.ctx,result,y); y=drawStudyTable(p.ctx,result,y); if(y<1380) y=drawTopClusterBreakdown(p.ctx,result,y); drawFooter(p.ctx,2);
-  // Page 3
-  p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,3,3,result,participant,logo); y=205;
-  y=drawSectionBand(p.ctx,'Penjabaran Hasil',y,'Dimensi pendukung dan rekomendasi tindak lanjut.'); y=drawDetailedScores(p.ctx,result,y); drawNextSteps(p.ctx,result,y+12); drawFooter(p.ctx,3);
+  // Page 2 - penjelasan asesmen dan empat dimensi
+  p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,2,totalPages,result,participant,logo); y=205;
+  drawAssessmentInfoPage(p.ctx,y); drawFooter(p.ctx,2);
+  // Page 3 - RIASEC dan cara membaca hasil
+  p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,3,totalPages,result,participant,logo); y=205;
+  drawRiasecGuidePage(p.ctx,y); drawFooter(p.ctx,3);
+  // Page 4 - rekomendasi studi dan TKA
+  p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,4,totalPages,result,participant,logo); y=205;
+  y=drawSectionBand(p.ctx,'Rekomendasi Rumpun Studi & Persiapan TKA',y,`Rekomendasi utama menggunakan batas minimum ${RECOMMENDATION_MIN_PERCENT}% dan dilengkapi arahan mapel TKA.`);
+  y=drawMandatoryTka(p.ctx,result,y); y=drawStudyTable(p.ctx,result,y); y=drawAlternativeStudy(p.ctx,result,y); if(y<1380) y=drawTopClusterBreakdown(p.ctx,result,y); drawFooter(p.ctx,4);
+  // Page 5 - penjabaran hasil
+  p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,5,totalPages,result,participant,logo); y=205;
+  y=drawSectionBand(p.ctx,'Penjabaran Hasil',y,'Dimensi pendukung dan rekomendasi tindak lanjut.'); y=drawDetailedScores(p.ctx,result,y); drawNextSteps(p.ctx,result,y+12); drawFooter(p.ctx,5);
   return pages;
 }
 

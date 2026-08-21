@@ -1,8 +1,9 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
 import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
-import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle } from './scoring.js';
-import { buildTkaGuidance, getMajorTkaInfo } from './tka-map.js';
-import { downloadAssessmentPdf } from './report-pdf.js';
+import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=9.9';
+import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js';
+import { downloadAssessmentPdf } from './report-pdf.js?v=9.9';
+import { renderAssessmentInfoHtml } from './assessment-info.js?v=9.9';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
@@ -68,7 +69,8 @@ function renderHome(){
   document.getElementById('homeAccess').innerHTML = state.access.paymentApproved ? '<span class="badge approved">Akses aktif</span>' : '<span class="badge pending">Menunggu verifikasi</span>';
   const answered = Object.keys(state.draft.answers || {}).length;
   document.getElementById('homeDraft').innerHTML = `<span class="badge info">${answered}/${QUESTIONS.length} butir</span>`;
-  document.getElementById('homeLatest').innerHTML = state.results[0] ? `<span class="badge approved">${state.results[0].recommendations?.[0]?.cluster || 'Tersedia'}</span>` : '<span class="badge info">Belum ada hasil</span>';
+  const latestQualified = state.results[0] ? recommendationsForResult(state.results[0]) : [];
+  document.getElementById('homeLatest').innerHTML = state.results[0] ? (latestQualified[0] ? `<span class="badge approved">${latestQualified[0].cluster}</span>` : '<span class="badge info">Perlu eksplorasi</span>') : '<span class="badge info">Belum ada hasil</span>';
   document.getElementById('homePaymentPrice').textContent = rupiah(state.settings.price);
   const wrap = document.getElementById('latestResultWrap');
   if(!state.results[0]){
@@ -347,6 +349,34 @@ async function finalizeAssessment(){
 }
 
 
+
+function fitBadge(percent){
+  const fit = getFitInterpretation(percent);
+  return `<span class="fit-badge ${fit.key}">${fit.label}</span>`;
+}
+
+function resultRecommendations(result){
+  return recommendationsForResult(result,5);
+}
+
+function resultAlternatives(result){
+  return alternativesForResult(result,3);
+}
+
+function resultRelativeTop(result){
+  return relativeTopForResult(result,3);
+}
+
+function renderNoQualifiedRecommendations(result){
+  const alternatives = resultAlternatives(result);
+  const relativeTop = resultRelativeTop(result);
+  const rows = alternatives.length ? alternatives : relativeTop;
+  return `<div class="recommendation-threshold-note">
+    <div class="threshold-icon">🧭</div>
+    <div><b>Belum ada rumpun yang mencapai batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%.</b><p>Hasil di bawah ini ditampilkan sebagai arah eksplorasi relatif, bukan rekomendasi utama. Gunakan bersama nilai rapor, pengalaman belajar, dan diskusi dengan pembimbing.</p></div>
+  </div>${rows.length ? `<div class="reco-list alternative-list">${rows.map(item=>`<div class="reco-card result-reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}</small></div>`).join('')}</div>` : ''}`;
+}
+
 function tkaSubjectIcon(subject=''){
   const s = subject.toLowerCase();
   if(s.includes('biologi')) return '🧬';
@@ -370,15 +400,17 @@ function renderSubjectChip(subject, type='elective'){
 }
 
 function renderTkaGuidance(result, compact=false){
-  const guidance = result?.tkaGuidance?.required ? result.tkaGuidance : buildTkaGuidance(result?.recommendations || []);
+  const qualified = resultRecommendations(result);
+  const guidance = buildTkaGuidance(qualified);
   const priority = guidance.priorityElectives || [];
+  const hasQualified = qualified.length > 0;
   return `
     <div class="tka-guidance-card ${compact ? 'compact' : ''}">
       <div class="tka-guidance-head">
         <div>
           <span class="tka-eyebrow">REKOMENDASI PAKET BIMBEL TKA</span>
           <h3>Mapel yang perlu kamu siapkan</h3>
-          <p>Berdasarkan rumpun jurusan teratasmu: <b>${guidance.cluster || result?.recommendations?.[0]?.cluster || '-'}</b>${guidance.percent ? ` • ${guidance.percent}% cocok` : ''}</p>
+          <p>${hasQualified ? `Berdasarkan rekomendasi yang mencapai batas ${RECOMMENDATION_MIN_PERCENT}%: <b>${guidance.cluster || '-'}</b>${guidance.percent ? ` • ${guidance.percent}%` : ''}` : `Belum ada rumpun yang mencapai batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%. Fokuskan dulu pada mapel wajib sambil memperjelas target jurusan.`}</p>
         </div>
         <div class="tka-bimbel-badge">🎯 Arah Belajar</div>
       </div>
@@ -389,7 +421,7 @@ function renderTkaGuidance(result, compact=false){
         </div>
         <div class="tka-plan-panel elective-panel">
           <div class="tka-plan-label"><span>02</span><div><b>Mapel pilihan prioritas</b><small>Inilah fokus bimbel yang paling layak kamu ambil</small></div></div>
-          <div class="tka-chip-wrap priority">${priority.length ? priority.map(x=>renderSubjectChip(x,'priority')).join('') : '<span class="tka-empty-choice">Sesuaikan dengan prodi spesifik dan mapel yang ada di rapor.</span>'}</div>
+          <div class="tka-chip-wrap priority">${priority.length ? priority.map(x=>renderSubjectChip(x,'priority')).join('') : `<span class="tka-empty-choice">${hasQualified ? 'Sesuaikan dengan prodi spesifik dan mapel yang ada di rapor.' : 'Belum ditetapkan karena rekomendasi utama belum mencapai 60%.'}</span>`}</div>
           ${priority.length === 1 ? '<div class="tka-choice-note">Pilihan kedua perlu disesuaikan dengan prodi target lain yang kamu pertimbangkan dan rekam mapel di rapor.</div>' : ''}
         </div>
       </div>
@@ -418,12 +450,14 @@ function renderRecommendationTka(item){
 
 function renderResultCard(result, compact=false){
   const top = result.topRiasec?.[0];
+  const recs = resultRecommendations(result);
+  const topRec = recs[0];
   return `
   <div class="card">
     <div class="panel-header"><div><h3>Hasil terbaru</h3><p>${result.summaryNarrative}</p></div><span class="badge approved">${formatDateTime(result.createdAt)}</span></div>
     <div class="result-hero">
       <div class="result-score-box"><small>Tipe dominan</small><b>${top?.label || '-'} (${top?.code || '-'})</b><div style="color:#fff4cc;line-height:1.7">${top?.description || ''}</div></div>
-      <div class="result-score-box"><small>Rekomendasi utama</small><b>${result.recommendations?.[0]?.cluster || '-'}</b><div style="color:#fff4cc;line-height:1.7">${(result.recommendations?.[0]?.majors || []).slice(0,4).join(', ')}</div></div>
+      <div class="result-score-box"><small>Rekomendasi utama</small><b>${topRec?.cluster || 'Belum mencapai 60%'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${(topRec.majors || []).slice(0,4).join(', ')}` : 'Gunakan arah relatif sebagai bahan eksplorasi awal.'}</div></div>
     </div>
     <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     ${renderTkaGuidance(result, true)}
@@ -438,35 +472,82 @@ function renderHistory(){
   document.getElementById('historyCount').textContent = state.results.length;
   const wrap = document.getElementById('historyList');
   if(!state.results.length){ wrap.innerHTML = '<div class="empty">Belum ada hasil asesmen tersimpan.</div>'; return; }
-  wrap.innerHTML = state.results.map(item=>`
+  wrap.innerHTML = state.results.map(item=>{
+    const topRec = resultRecommendations(item)[0];
+    return `
     <div class="history-item">
-      <div><strong>${item.recommendations?.[0]?.cluster || 'Hasil asesmen'}</strong><small>${formatDateTime(item.createdAt)} • ${item.topRiasec?.map(x=>x.code).join('-')} • ${item.summaryNarrative}</small></div>
-      <div class="inline-actions"><span class="badge info">${item.riasecChart?.[0]?.percent || 0}%</span><button class="btn btn-secondary btn-sm" data-result="${item.id}">Lihat</button><button class="btn btn-primary btn-sm" data-download-result="${item.id}">⬇ PDF</button></div>
-    </div>
-  `).join('');
+      <div><strong>${topRec?.cluster || 'Perlu eksplorasi lebih lanjut'}</strong><small>${formatDateTime(item.createdAt)} • ${item.topRiasec?.map(x=>x.code).join('-')} • ${item.summaryNarrative}</small></div>
+      <div class="inline-actions">${topRec ? fitBadge(topRec.percent) : '<span class="badge info">Belum 60%</span>'}<button class="btn btn-secondary btn-sm" data-result="${item.id}">Lihat</button><button class="btn btn-primary btn-sm" data-download-result="${item.id}">⬇ PDF</button></div>
+    </div>`;
+  }).join('');
   wrap.querySelectorAll('[data-result]').forEach(btn=> btn.addEventListener('click', ()=> showResult(state.results.find(x=>x.id===btn.dataset.result))));
   bindResultPdfButtons(wrap);
+}
+
+function renderParticipantReportData(result){
+  const p = { ...(result?.participant || {}), ...(state.profile || {}) };
+  const fields = [
+    ['Nama Lengkap', p.name || '-'],
+    ['Email', p.email || '-'],
+    ['Kelas', p.className || '-'],
+    ['Asal Sekolah/Pesantren', p.school || '-'],
+    ['Jenis Kelamin', p.gender || '-'],
+    ['Tanggal Asesmen', formatDateTime(result?.createdAt)]
+  ];
+  return `<div class="card participant-report-card">
+    <div class="panel-header"><div><h3>Data Peserta</h3><p>Identitas peserta pada laporan hasil asesmen.</p></div><span class="badge info">Laporan Hasil</span></div>
+    <div class="participant-report-grid">${fields.map(([label,value])=>`<div><small>${label}</small><b>${value}</b></div>`).join('')}</div>
+  </div>`;
+}
+
+function renderResultNextSteps(result){
+  const top = resultRecommendations(result)[0];
+  const guidance = buildTkaGuidance(top ? [top] : []);
+  const required = TKA_REQUIRED || ['Bahasa Indonesia','Bahasa Inggris','Matematika'];
+  const steps = [
+    top ? `Eksplorasi lebih dalam 2-3 jurusan teratas pada rumpun ${top.cluster}.` : `Belum ada rumpun yang mencapai ${RECOMMENDATION_MIN_PERCENT}%; gunakan hasil sebagai bahan eksplorasi awal bersama pembimbing.`,
+    `Untuk TKA, pertahankan mapel wajib: ${required.join(', ')}.`,
+    `Prioritaskan pendalaman mapel pilihan: ${(guidance.priorityElectives || []).join(' dan ') || 'sesuaikan dengan prodi target'}.`,
+    'Bandingkan hasil asesmen dengan nilai rapor, pengalaman belajar, aktivitas yang paling dinikmati, dan target kampus.',
+    'Diskusikan keputusan akhir bersama orang tua, guru BK/pembimbing, atau mentor akademik.'
+  ];
+  return `<div class="card result-next-steps">
+    <div class="panel-header"><div><h3>Saran Tindak Lanjut</h3><p>Gunakan hasil asesmen untuk menentukan langkah eksplorasi dan persiapan berikutnya.</p></div></div>
+    <div class="next-step-list">${steps.map((item,index)=>`<div><span>${index+1}</span><p>${item}</p></div>`).join('')}</div>
+    <div class="score-disclaimer">Laporan ini adalah alat bantu eksplorasi pendidikan. Persentase kecocokan bukan peluang sukses kuliah dan bukan diagnosis psikologis.</div>
+  </div>`;
 }
 
 function showResult(result){
   if(!result) return;
   state.currentResult = result;
+  const recs = resultRecommendations(result);
+  const topRec = recs[0];
+  const alternatives = resultAlternatives(result);
   document.getElementById('resultModalBody').innerHTML = `
     <div class="report-modal-actions"><button class="btn btn-primary btn-sm" data-download-current>⬇ Unduh Laporan PDF</button></div>
+    ${renderParticipantReportData(result)}
     <div class="result-hero">
       <div class="result-score-box"><small>Profil RIASEC dominan</small><b>${result.topRiasec.map(x=>`${x.label} (${x.code})`).join(' • ')}</b><div style="color:#fff4cc;line-height:1.7">${result.topRiasec.map(x=>x.description).join(' ')}</div></div>
-      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${result.recommendations[0].cluster}</b><div style="color:#fff4cc;line-height:1.7">${result.recommendations[0].majors.join(', ')}</div></div>
+      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${(topRec.majors||[]).join(', ')}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div></div>
     </div>
     <div class="card" style="padding:0;background:none;border:none;box-shadow:none">
       <div class="panel-header"><div><h3>Skor RIASEC</h3></div></div>
       <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     </div>
+    ${renderAssessmentInfoHtml()}
     ${renderTkaGuidance(result, false)}
     <div class="grid-2" style="margin-top:18px">
       <div class="card"><div class="panel-header"><div><h3>Kekuatan yang menonjol</h3></div></div><div class="reco-list">${result.academic.slice(0,4).map(x=>`<div class="reco-card"><b>${labelAcademic(x.code)}</b><small>${x.percent}%</small></div>`).join('')}${result.workstyle.slice(0,4).map(x=>`<div class="reco-card"><b>${labelWorkstyle(x.code)}</b><small>${x.percent}%</small></div>`).join('')}</div></div>
       <div class="card"><div class="panel-header"><div><h3>Nilai hidup</h3></div></div><div class="reco-list">${result.values.slice(0,4).map(x=>`<div class="reco-card"><b>${labelValue(x.code)}</b><small>${x.percent}%</small></div>`).join('')}</div></div>
     </div>
-    <div class="card" style="margin-top:18px"><div class="panel-header"><div><h3>Rekomendasi rumpun studi</h3><p>${result.summaryNarrative}</p></div></div><div class="reco-list">${result.recommendations.map(item=>`<div class="reco-card result-reco-card"><b>${item.cluster} — ${item.percent}% cocok</b><small>${item.majors.join(', ')}<br>${item.reasons.join(' ')}</small>${renderRecommendationTka(item)}</div>`).join('')}</div></div>`;
+    <div class="card recommendation-policy-card" style="margin-top:18px">
+      <div class="panel-header"><div><h3>Rekomendasi rumpun studi</h3><p>${result.summaryNarrative}</p></div><span class="threshold-chip">Batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%</span></div>
+      ${recs.length ? `<div class="reco-list">${recs.map(item=>`<div class="reco-card result-reco-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${item.majors.join(', ')}<br>${(item.reasons||[]).join(' ')}</small>${renderRecommendationTka(item)}</div>`).join('')}</div>` : renderNoQualifiedRecommendations(result)}
+      ${recs.length && alternatives.length ? `<div class="alternative-section"><div class="alternative-title"><b>Alternatif eksplorasi</b><small>Skor 50–59% tidak masuk rekomendasi utama.</small></div><div class="reco-list">${alternatives.map(item=>`<div class="reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}</small></div>`).join('')}</div></div>` : ''}
+      <div class="score-disclaimer">Persentase kecocokan menunjukkan tingkat keselarasan profil peserta dengan karakteristik rumpun studi. Angka ini bukan probabilitas keberhasilan kuliah dan bukan jaminan kecocokan mutlak.</div>
+    </div>
+    ${renderResultNextSteps(result)}`;
   toggleModal(document.getElementById('resultModal'), true);
   bindResultPdfButtons(document.getElementById('resultModalBody'));
 }
