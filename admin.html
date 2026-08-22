@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard Admin — Kompas Jurusan</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/app.css?v=11.0">
+  <link rel="stylesheet" href="assets/app.css?v=11.1">
 </head>
 <body>
   <div class="app-shell">
@@ -125,6 +125,40 @@
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=11.0"></script>
+
+  <script>
+    // V11.1 navigation fallback: sengaja tidak bergantung pada module/Firebase.
+    (function(){
+      function closeLocalModals(){
+        document.querySelectorAll('.modal.show').forEach(function(modal){
+          modal.classList.remove('show');
+          modal.setAttribute('aria-hidden','true');
+        });
+      }
+      function openSection(id){
+        var target=document.getElementById(id);
+        if(!target) return;
+        closeLocalModals();
+        document.querySelectorAll('.section').forEach(function(sec){
+          sec.classList.toggle('active',sec.id===id);
+        });
+        document.querySelectorAll('[data-section-target]').forEach(function(btn){
+          btn.classList.toggle('active',btn.getAttribute('data-section-target')===id);
+        });
+        var mobilePanel=document.getElementById('mobilePanel');
+        if(mobilePanel) mobilePanel.classList.remove('show');
+        try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); }
+      }
+      document.addEventListener('click',function(event){
+        var btn=event.target.closest && event.target.closest('[data-section-target]');
+        if(!btn) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openSection(btn.getAttribute('data-section-target'));
+      },true);
+      window.__kompasOpenSection=openSection;
+    })();
+  </script>
+  <script type="module" src="js/admin.js?v=11.1"></script>
 </body>
 </html>

@@ -1,10 +1,10 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=11.0';
-import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=11.0';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.0';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.0';
+import { defaultPublicSettings } from './data.js?v=11.1';
+import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=11.1';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.1';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.1';
 
 const state = {
   user: null,
