@@ -1,18 +1,38 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=11.2';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.2';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.2';
+import { defaultPublicSettings } from './data.js?v=11.3';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.3';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.3';
 
 
 let pdfModulePromise = null;
 async function getPdfModule(){
+  if(window.KompasPdfModule) return window.KompasPdfModule;
   if(!pdfModulePromise){
-    pdfModulePromise = import('./report-pdf.js?v=11.2').catch(err=>{
-      pdfModulePromise = null;
-      console.error('Modul PDF gagal dimuat', err);
-      throw err;
+    pdfModulePromise = new Promise((resolve,reject)=>{
+      let settled=false;
+      const finish=()=>{
+        if(settled) return;
+        if(window.KompasPdfModule){ settled=true; resolve(window.KompasPdfModule); }
+      };
+      window.addEventListener('kompas-pdf-ready',finish,{once:true});
+      // Fallback bila bridge belum selesai dalam 4 detik.
+      setTimeout(async()=>{
+        if(settled) return;
+        try{
+          const mod=await import('./report-pdf.js?v=11.3-fallback');
+          window.KompasPdfModule=mod;
+          settled=true;
+          resolve(mod);
+        }catch(err){
+          settled=true;
+          pdfModulePromise=null;
+          console.error('Modul PDF gagal dimuat',err);
+          reject(err);
+        }
+      },4000);
+      finish();
     });
   }
   return pdfModulePromise;
@@ -461,24 +481,36 @@ async function downloadSelectedResults(){
   const tokens=[...state.selectedResults];
   if(!tokens.length) return;
   const original=btn?.innerHTML;
+  let done=0;
+  const failures=[];
   try{
     if(btn){btn.disabled=true;btn.innerHTML='Menyiapkan...';}
     setBatchMessage(`Menyiapkan ${tokens.length} laporan PDF. File akan diunduh satu per satu.`,'info');
-    let done=0;
+    const { downloadAssessmentPdf } = await getPdfModule();
     for(const token of tokens){
       const {uid,id}=parseResultToken(token);
-      const result=await resolveResult(uid,id);
-      if(!result) continue;
-      const participant=await resolveParticipant(result);
-      const safeName=String(participant?.name||'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-      await downloadAssessmentPdf(result,participant,{filename:`hasil-kompas-jurusan-${safeName||'peserta'}-${id.slice(-6)}.pdf`});
-      done++;
-      if(btn) btn.innerHTML=`Mengunduh ${done}/${tokens.length}`;
-      await sleep(350);
+      try{
+        const result=await resolveResult(uid,id);
+        if(!result) throw new Error('Data hasil tidak ditemukan.');
+        const participant=await resolveParticipant(result);
+        const safeName=String(participant?.name||'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+        await downloadAssessmentPdf(result,participant,{filename:`hasil-kompas-jurusan-${safeName||'peserta'}-${id.slice(-6)}.pdf`});
+        done++;
+        if(btn) btn.innerHTML=`Mengunduh ${done}/${tokens.length}`;
+        await sleep(650);
+      }catch(err){
+        console.error('PDF massal gagal untuk', token, err);
+        failures.push({token,error:err});
+      }
     }
-    setBatchMessage(`${done} laporan berhasil diproses sebagai file PDF terpisah.`,'success');
+    if(failures.length){
+      setBatchMessage(`${done} berhasil, ${failures.length} belum dapat dibuat. Coba ulang yang gagal.`,'error');
+    }else{
+      setBatchMessage(`${done} laporan berhasil diproses sebagai file PDF terpisah.`,'success');
+    }
   }catch(err){
-    console.error(err);setBatchMessage('Sebagian laporan belum dapat diunduh. Silakan coba lagi.','error');
+    console.error(err);
+    setBatchMessage(`Download massal belum dapat dimulai: ${err?.message || 'silakan coba lagi.'}`,'error');
   }finally{
     if(btn){btn.innerHTML=original||'⬇ Download Massal';btn.disabled=state.selectedResults.size===0;}
   }
@@ -492,6 +524,7 @@ async function downloadAllResultsRecap(){
     setBatchMessage(`Menyusun ${state.results.length} hasil menjadi satu PDF rekap. Bagian penjelasan asesmen tidak disertakan.`,'info');
     const entries=[];
     for(const result of state.results){ entries.push({result,participant:await resolveParticipant(result)}); }
+    const { downloadResultsRecapPdf } = await getPdfModule();
     await downloadResultsRecapPdf(entries,{filename:`rekap-semua-hasil-kompas-jurusan-${new Date().toISOString().slice(0,10)}.pdf`});
     setBatchMessage('PDF rekap semua hasil berhasil dibuat.','success');
   }catch(err){

@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.2';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.2';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=11.2';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.3';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.3';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=11.3';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -475,8 +475,20 @@ async function buildCanvases(result,participant){
 
 
 function base64ToBytes(dataUrl){
-  const b64=dataUrl.split(',')[1];
-  const bin=atob(b64); const out=new Uint8Array(bin.length);
+  const raw=String(dataUrl||'');
+  const comma=raw.indexOf(',');
+  if(comma<0) throw new Error('Data gambar PDF tidak valid.');
+  let b64=raw.slice(comma+1).replace(/\s+/g,'');
+  const remainder=b64.length%4;
+  if(remainder) b64 += '='.repeat(4-remainder);
+  let bin;
+  try{
+    bin=atob(b64);
+  }catch(err){
+    console.error('Base64 PDF decode failed', {length:b64.length,remainder,err});
+    throw new Error('Gambar laporan gagal dikodekan. Silakan coba lagi.');
+  }
+  const out=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
   return out;
 }
@@ -674,12 +686,16 @@ export async function downloadResultsRecapPdf(entries=[],options={}){
   a.href=url;
   a.download=options.filename||`rekap-hasil-kompas-jurusan-${new Date().toISOString().slice(0,10)}.pdf`;
   document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  setTimeout(()=>URL.revokeObjectURL(url),8000);
 }
 
 export async function buildAssessmentPdfBlob(result,participant={}){
   const canvases=await buildCanvases(result,participant);
-  return canvasesToPdf(canvases);
+  try{
+    return canvasesToPdf(canvases);
+  }finally{
+    canvases.forEach(canvas=>{ try{ canvas.width=1; canvas.height=1; }catch{} });
+  }
 }
 
 export async function downloadAssessmentPdf(result,participant={},options={}){
@@ -692,6 +708,6 @@ export async function downloadAssessmentPdf(result,participant={},options={}){
   a.href=url;
   a.download=options.filename || `hasil-kompas-jurusan-${fileSafe(merged.name)}-${date}.pdf`;
   document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  setTimeout(()=>URL.revokeObjectURL(url),8000);
   return blob;
 }
