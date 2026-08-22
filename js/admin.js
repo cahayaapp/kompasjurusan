@@ -1,9 +1,9 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js';
-import { downloadAssessmentPdf } from './report-pdf.js?v=9.9';
-import { recommendationsForResult, getFitInterpretation } from './scoring.js?v=9.9';
+import { defaultPublicSettings } from './data.js?v=10.3';
+import { downloadAssessmentPdf } from './report-pdf.js?v=10.3';
+import { recommendationsForResult, getFitInterpretation } from './scoring.js?v=10.3';
 
 const state = {
   user: null,

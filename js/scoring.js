@@ -1,5 +1,5 @@
-import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js';
-import { buildTkaGuidance } from './tka-map.js';
+import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.3';
+import { buildTkaGuidance } from './tka-map.js?v=10.3';
 
 export const RECOMMENDATION_MIN_PERCENT = 60;
 
@@ -58,7 +58,15 @@ export function getFitInterpretation(percent){
 
 function enrichRecommendation(rec){
   const fit = getFitInterpretation(rec?.percent);
-  return { ...rec, fitLabel:fit.label, fitLevel:fit.level, fitKey:fit.key, fitDescription:fit.description };
+  const clusterDef = MAJOR_CLUSTERS.find(item => item.name === rec?.cluster);
+  const islamicMajors = Array.isArray(rec?.islamicMajors) && rec.islamicMajors.length
+    ? rec.islamicMajors
+    : (clusterDef?.islamicMajors || []);
+  return { ...rec, islamicMajors, fitLabel:fit.label, fitLevel:fit.level, fitKey:fit.key, fitDescription:fit.description };
+}
+
+export function islamicMajorsForRecommendation(rec={}){
+  return enrichRecommendation(rec).islamicMajors || [];
 }
 
 export function getQualifiedRecommendations(recommendations=[], limit=5){
@@ -137,6 +145,7 @@ export function computeAssessmentResult(answers, profile={}){
     return enrichRecommendation({
       cluster: cluster.name,
       majors: cluster.majors,
+      islamicMajors: cluster.islamicMajors || [],
       percent,
       reasons: buildReasons(cluster.name, topRiasec, academic, values, workstyle)
     });

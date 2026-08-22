@@ -1,4 +1,4 @@
-import { RIASEC_INFO } from './data.js';
+import { RIASEC_INFO } from './data.js?v=10.3';
 
 export const ASSESSMENT_INFO = {
   title: 'Mengenal Asesmen Kompas Jurusan',
@@ -11,7 +11,7 @@ export const ASSESSMENT_INFO = {
     'Nilai hidup membantu melihat hal-hal yang dianggap penting dalam masa depan, seperti makna, kontribusi, keamanan, pertumbuhan, fleksibilitas, dampak, dan keselarasan dengan nilai pribadi.',
     'Gaya kerja membantu mengenali cara peserta menjalani tugas, bekerja sama, berkomunikasi, memimpin, bertahan menghadapi tantangan, dan belajar secara mandiri.'
   ],
-  importanceClosing: 'Karena itu, rekomendasi tidak dibangun dari satu skor saja. Arah studi muncul dari kombinasi beberapa dimensi yang kemudian dibandingkan dengan karakteristik rumpun studi. Hasil ini sebaiknya dipadukan dengan nilai rapor, prestasi nyata, pengalaman belajar, kondisi keluarga, informasi kampus, peluang beasiswa, serta diskusi dengan orang tua dan pembimbing.',
+  importanceClosing: 'Karena itu, rekomendasi tidak dibangun dari satu skor saja. Arah studi muncul dari kombinasi beberapa dimensi yang kemudian dibandingkan dengan karakteristik rumpun studi. Hasil ini sebaiknya dipadukan dengan nilai rapor, prestasi nyata, pengalaman belajar, kondisi keluarga, informasi kampus, peluang beasiswa, serta diskusi dengan orang tua dan pembimbing. Program studi keislaman tidak dipisahkan menjadi satu rumpun tersendiri. Kompas Jurusan menempatkannya berdasarkan bidang keilmuan terdekat: PAI pada Pendidikan & Humaniora, Hukum Keluarga Islam dan Hukum Ekonomi Syariah pada Hukum & Kebijakan, Ekonomi Syariah dan Perbankan Syariah pada Bisnis, Ekonomi & Manajemen, sedangkan Tasawuf dan Psikoterapi, KPI, serta Manajemen Dakwah ditempatkan pada Psikologi & Sosial. Dengan cara ini, peserta membandingkan program studi berdasarkan karakter bidang ilmunya, bukan hanya berdasarkan label keislamannya.',
   dimensionsTitle: 'Empat dimensi yang dibaca',
   dimensions: [
     {

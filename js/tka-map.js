@@ -48,6 +48,11 @@ export const TKA_MAJOR_MAP = {
     note: 'Kelompok komputer/informasi menempatkan Matematika Tingkat Lanjut sebagai prioritas.'
   },
 
+  'Ilmu Falak': {
+    options: ['Matematika Tingkat Lanjut', 'Fisika'],
+    note: 'Ilmu Falak memadukan kajian keislaman dengan astronomi; Matematika Tingkat Lanjut dan Fisika menjadi penguatan akademik yang paling relevan.'
+  },
+
   'Kedokteran': {
     options: ['Biologi', 'Kimia'],
     note: 'Kedokteran didukung Biologi dan/atau Kimia.'
@@ -134,6 +139,75 @@ export const TKA_MAJOR_MAP = {
     note: 'Hubungan Internasional kuat pada Bahasa Inggris Tingkat Lanjut, PPKn, dan Sejarah.'
   },
 
+  'Pendidikan Agama Islam (PAI)': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'Untuk PAI, Bahasa Arab menjadi penguatan penting untuk sumber-sumber keislaman; Bahasa Indonesia Tingkat Lanjut membantu kemampuan akademik, literasi, dan komunikasi pendidikan.'
+  },
+  'Pendidikan Bahasa Arab': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'Bahasa Arab menjadi penguatan utama untuk Pendidikan Bahasa Arab; Bahasa Indonesia Tingkat Lanjut mendukung literasi akademik dan kompetensi kependidikan.'
+  },
+  'Ilmu Hukum': {
+    options: ['Pendidikan Pancasila/PPKn', 'Sosiologi', 'Sejarah'],
+    note: 'Untuk Ilmu Hukum, PPKn, Sosiologi, dan Sejarah menjadi pilihan penguatan yang relevan untuk literasi hukum, kewargaan, dan konteks sosial.'
+  },
+  'Hukum Keluarga Islam (Ahwal Syakhshiyyah)': {
+    options: ['Bahasa Arab', 'Pendidikan Pancasila/PPKn'],
+    note: 'Bahasa Arab membantu kajian sumber hukum keluarga Islam, sedangkan PPKn memperkuat wawasan hukum dan kewargaan.'
+  },
+  'Hukum Islam / Syariah': {
+    options: ['Bahasa Arab', 'Pendidikan Pancasila/PPKn'],
+    note: 'Bahasa Arab membantu kajian sumber hukum Islam, sedangkan PPKn relevan untuk penguatan wawasan hukum dan kewargaan.'
+  },
+  'Hukum Tata Negara (Siyasah)': {
+    options: ['Pendidikan Pancasila/PPKn', 'Bahasa Arab'],
+    note: 'PPKn menjadi penguatan utama untuk tata negara dan kewargaan; Bahasa Arab membantu kajian sumber siyasah dan literatur keislaman.'
+  },
+  'Administrasi Publik': {
+    options: ['Pendidikan Pancasila/PPKn', 'Sosiologi', 'Ekonomi'],
+    note: 'Administrasi Publik berkaitan dengan kebijakan, masyarakat, tata kelola, dan pemahaman ekonomi publik.'
+  },
+  'Hukum Ekonomi Syariah': {
+    options: ['Ekonomi', 'Bahasa Arab'],
+    note: 'Hukum Ekonomi Syariah memerlukan penguatan Ekonomi sekaligus Bahasa Arab untuk memahami terminologi dan sumber-sumber syariah.'
+  },
+  "Ilmu Al-Qur'an dan Tafsir": {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: "Bahasa Arab menjadi prioritas utama untuk kajian Al-Qur'an dan tafsir; literasi Bahasa Indonesia Tingkat Lanjut membantu kemampuan analisis dan penulisan akademik."
+  },
+  'Ilmu Hadis': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'Bahasa Arab menjadi prioritas utama untuk memahami teks dan literatur hadis; Bahasa Indonesia Tingkat Lanjut mendukung literasi dan penulisan akademik.'
+  },
+  'Aqidah dan Filsafat Islam': {
+    options: ['Bahasa Arab', 'Sosiologi'],
+    note: 'Bahasa Arab membantu kajian literatur Islam, sedangkan Sosiologi mendukung pembacaan persoalan pemikiran dan masyarakat kontemporer.'
+  },
+  'Sejarah Peradaban Islam': {
+    options: ['Sejarah', 'Bahasa Arab'],
+    note: 'Sejarah menjadi penguatan utama untuk kajian peradaban; Bahasa Arab membantu akses pada sumber dan literatur Islam.'
+  },
+  'Tasawuf dan Psikoterapi': {
+    options: ['Bahasa Arab', 'Sosiologi'],
+    note: 'Bahasa Arab penting untuk kajian literatur tasawuf; Sosiologi membantu memahami manusia dan konteks sosial yang terkait dengan pendampingan.'
+  },
+  'Komunikasi dan Penyiaran Islam': {
+    options: ['Bahasa Indonesia Tingkat Lanjut', 'Bahasa Arab', 'Bahasa Inggris Tingkat Lanjut'],
+    note: 'KPI sangat terkait dengan kemampuan bahasa dan komunikasi; Bahasa Arab memberi nilai tambah pada kajian dan penyiaran keislaman.'
+  },
+  'Manajemen Dakwah': {
+    options: ['Bahasa Arab', 'Ekonomi', 'Produk/Projek Kreatif dan Kewirausahaan'],
+    note: 'Manajemen Dakwah memerlukan kemampuan memahami sumber keislaman sekaligus pengelolaan organisasi dan program.'
+  },
+  'Ekonomi Syariah': {
+    options: ['Ekonomi', 'Matematika Tingkat Lanjut'],
+    note: 'Ekonomi Syariah kuat pada Ekonomi dan kemampuan kuantitatif; Bahasa Arab tetap sangat baik diperdalam sebagai penguatan literatur syariah.'
+  },
+  'Perbankan Syariah': {
+    options: ['Ekonomi', 'Matematika Tingkat Lanjut'],
+    note: 'Perbankan Syariah membutuhkan penguatan Ekonomi dan kemampuan kuantitatif; Bahasa Arab dapat menjadi penguatan tambahan untuk terminologi syariah.'
+  },
+
   'Desain Komunikasi Visual': {
     options: [],
     customLabel: 'Seni Budaya (pendukung prodi; bukan mapel pilihan TKA)',
@@ -165,7 +239,8 @@ const clusterFallbacks = {
   'Sains & Teknologi': ['Matematika Tingkat Lanjut', 'Fisika'],
   'Kesehatan': ['Biologi', 'Kimia'],
   'Pendidikan & Humaniora': ['Bahasa Indonesia Tingkat Lanjut', 'Bahasa Inggris Tingkat Lanjut'],
-  'Bisnis & Manajemen': ['Ekonomi', 'Produk/Projek Kreatif dan Kewirausahaan'],
+  'Bisnis, Ekonomi & Manajemen': ['Ekonomi', 'Produk/Projek Kreatif dan Kewirausahaan'],
+  'Hukum & Kebijakan': ['Pendidikan Pancasila/PPKn', 'Sosiologi'],
   'Psikologi & Sosial': ['Sosiologi', 'Bahasa Inggris Tingkat Lanjut'],
   'Seni & Industri Kreatif': ['Fisika']
 };
@@ -188,6 +263,7 @@ export function buildTkaGuidance(recommendations=[]){
   };
 
   const majorBreakdown = (top.majors || []).map(major => ({ major, ...getMajorTkaInfo(major) }));
+  const islamicMajorBreakdown = (top.islamicMajors || []).map(major => ({ major, ...getMajorTkaInfo(major) }));
   const counts = new Map();
   const order = [];
   majorBreakdown.forEach(item => {
@@ -217,10 +293,26 @@ export function buildTkaGuidance(recommendations=[]){
     priorityElectives = priorityElectives.slice(0,1);
   }
 
+  const islamicCounts = new Map();
+  const islamicOrder = [];
+  islamicMajorBreakdown.forEach(item => {
+    item.options.forEach(subject => {
+      if(!TKA_ELECTIVE_SUBJECTS.includes(subject)) return;
+      if(!islamicCounts.has(subject)) islamicOrder.push(subject);
+      islamicCounts.set(subject, (islamicCounts.get(subject) || 0) + 1);
+    });
+  });
+  const islamicPriorityElectives = [...islamicCounts.entries()]
+    .sort((a,b) => (b[1]-a[1]) || (islamicOrder.indexOf(a[0])-islamicOrder.indexOf(b[0])))
+    .map(([subject]) => subject)
+    .slice(0,2);
+
   return {
     required: TKA_REQUIRED,
     priorityElectives,
+    islamicPriorityElectives,
     majorBreakdown,
+    islamicMajorBreakdown,
     cluster: top.cluster,
     percent: top.percent,
     note: 'Gunakan rekomendasi ini sebagai panduan awal. Pilihan final tetap harus disesuaikan dengan prodi target dan mapel yang tercantum di rapor.'

@@ -243,12 +243,48 @@ export const QUESTIONS = [
 ];
 
 export const MAJOR_CLUSTERS = [
-  { name: 'Sains & Teknologi', majors: ['Teknik Informatika', 'Data Science', 'Statistika', 'Teknik Industri', 'Sistem Informasi'], weights: { I: .28, R: .12, numerik: .18, logika: .18, digital: .16, discipline: .08 } },
-  { name: 'Kesehatan', majors: ['Kedokteran', 'Farmasi', 'Keperawatan', 'Gizi', 'Kesehatan Masyarakat'], weights: { I: .22, S: .16, sosial: .12, numerik: .12, resilience: .1, mission: .12, spirituality: .08, discipline: .08 } },
-  { name: 'Pendidikan & Humaniora', majors: ['Pendidikan', 'Bahasa', 'Sejarah', 'Sastra', 'Bimbingan Konseling'], weights: { S: .24, A: .1, verbal: .18, communication: .14, mission: .12, growth: .08, collaboration: .08, sosial: .06 } },
-  { name: 'Bisnis & Manajemen', majors: ['Manajemen', 'Bisnis Digital', 'Akuntansi', 'Kewirausahaan', 'Administrasi Bisnis'], weights: { E: .24, C: .1, numerik: .12, leadership: .14, communication: .12, security: .1, impact: .08, discipline: .1 } },
-  { name: 'Psikologi & Sosial', majors: ['Psikologi', 'Sosiologi', 'Ilmu Komunikasi', 'Pekerjaan Sosial', 'Hubungan Internasional'], weights: { S: .2, I: .1, verbal: .12, sosial: .18, communication: .12, impact: .1, mission: .1, collaboration: .08 } },
-  { name: 'Seni & Industri Kreatif', majors: ['Desain Komunikasi Visual', 'Arsitektur', 'Film', 'Seni Musik', 'Fashion Design'], weights: { A: .28, visual: .18, verbal: .08, flexibility: .1, growth: .1, independence: .08, communication: .08, workstyle: .1 } }
+  {
+    name: 'Sains & Teknologi',
+    majors: ['Teknik Informatika', 'Data Science', 'Statistika', 'Teknik Industri', 'Sistem Informasi'],
+    islamicMajors: ['Ilmu Falak'],
+    weights: { I: .28, R: .12, numerik: .18, logika: .18, digital: .16, discipline: .08 }
+  },
+  {
+    name: 'Kesehatan',
+    majors: ['Kedokteran', 'Farmasi', 'Keperawatan', 'Gizi', 'Kesehatan Masyarakat'],
+    islamicMajors: [],
+    weights: { I: .22, S: .16, sosial: .12, numerik: .12, resilience: .1, mission: .12, spirituality: .08, discipline: .08 }
+  },
+  {
+    name: 'Pendidikan & Humaniora',
+    majors: ['Pendidikan', 'Bahasa', 'Sejarah', 'Sastra', 'Bimbingan Konseling'],
+    islamicMajors: ['Pendidikan Agama Islam (PAI)', 'Pendidikan Bahasa Arab', "Ilmu Al-Qur'an dan Tafsir", 'Ilmu Hadis', 'Aqidah dan Filsafat Islam', 'Sejarah Peradaban Islam'],
+    weights: { S: .22, A: .08, I: .06, verbal: .18, communication: .13, mission: .11, growth: .07, collaboration: .07, sosial: .05, spirituality: .03 }
+  },
+  {
+    name: 'Bisnis, Ekonomi & Manajemen',
+    majors: ['Manajemen', 'Bisnis Digital', 'Akuntansi', 'Kewirausahaan', 'Administrasi Bisnis'],
+    islamicMajors: ['Ekonomi Syariah', 'Perbankan Syariah'],
+    weights: { E: .24, C: .1, numerik: .12, leadership: .14, communication: .12, security: .1, impact: .08, discipline: .1 }
+  },
+  {
+    name: 'Hukum & Kebijakan',
+    majors: ['Ilmu Hukum', 'Administrasi Publik'],
+    islamicMajors: ['Hukum Keluarga Islam (Ahwal Syakhshiyyah)', 'Hukum Ekonomi Syariah', 'Hukum Tata Negara (Siyasah)'],
+    weights: { E: .15, S: .12, I: .08, verbal: .17, logika: .13, sosial: .08, communication: .1, impact: .07, discipline: .06, leadership: .04 }
+  },
+  {
+    name: 'Psikologi & Sosial',
+    majors: ['Psikologi', 'Sosiologi', 'Ilmu Komunikasi', 'Pekerjaan Sosial', 'Hubungan Internasional'],
+    islamicMajors: ['Tasawuf dan Psikoterapi', 'Komunikasi dan Penyiaran Islam', 'Manajemen Dakwah'],
+    weights: { S: .2, I: .1, verbal: .12, sosial: .18, communication: .12, impact: .1, mission: .1, collaboration: .06, spirituality: .02 }
+  },
+  {
+    name: 'Seni & Industri Kreatif',
+    majors: ['Desain Komunikasi Visual', 'Arsitektur', 'Film', 'Seni Musik', 'Fashion Design'],
+    islamicMajors: [],
+    weights: { A: .28, visual: .18, verbal: .08, flexibility: .1, growth: .1, independence: .08, communication: .08, workstyle: .1 }
+  }
 ];
 
 export function defaultPublicSettings(){

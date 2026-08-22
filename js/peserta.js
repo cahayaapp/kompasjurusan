@@ -1,9 +1,9 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
-import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js';
-import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=9.9';
-import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js';
-import { downloadAssessmentPdf } from './report-pdf.js?v=9.9';
-import { renderAssessmentInfoHtml } from './assessment-info.js?v=9.9';
+import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=10.3';
+import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.3';
+import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=10.3';
+import { downloadAssessmentPdf } from './report-pdf.js?v=10.3';
+import { renderAssessmentInfoHtml } from './assessment-info.js?v=10.3';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
@@ -374,7 +374,7 @@ function renderNoQualifiedRecommendations(result){
   return `<div class="recommendation-threshold-note">
     <div class="threshold-icon">🧭</div>
     <div><b>Belum ada rumpun yang mencapai batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%.</b><p>Hasil di bawah ini ditampilkan sebagai arah eksplorasi relatif, bukan rekomendasi utama. Gunakan bersama nilai rapor, pengalaman belajar, dan diskusi dengan pembimbing.</p></div>
-  </div>${rows.length ? `<div class="reco-list alternative-list">${rows.map(item=>`<div class="reco-card result-reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}</small></div>`).join('')}</div>` : ''}`;
+  </div>${rows.length ? `<div class="reco-list alternative-list">${rows.map(item=>`<div class="reco-card result-reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}${(item.islamicMajors||[]).length ? `<br><b>Ilmu Keislaman:</b> ${(item.islamicMajors||[]).join(', ')}` : ''}</small></div>`).join('')}</div>` : ''}`;
 }
 
 function tkaSubjectIcon(subject=''){
@@ -390,6 +390,7 @@ function tkaSubjectIcon(subject=''){
   if(s.includes('pancasila') || s.includes('ppkn')) return '🇮🇩';
   if(s.includes('bahasa indonesia')) return '📖';
   if(s.includes('bahasa inggris')) return '🌐';
+  if(s.includes('bahasa arab')) return '📜';
   if(s.includes('kewirausahaan')) return '💡';
   if(s.includes('seni')) return '🎨';
   return '📘';
@@ -437,9 +438,32 @@ function renderTkaGuidance(result, compact=false){
             </div>
           `).join('')}
         </div>
+        ${(guidance.islamicMajorBreakdown || []).length ? `<div class="tka-major-map islamic-major-map">
+          <div class="tka-major-map-head"><b>Jika memilih jalur Ilmu Keislaman</b><small>Program studi keislaman ditempatkan sesuai rumpun ilmunya, bukan sebagai rumpun terpisah.</small></div>
+          ${(guidance.islamicMajorBreakdown || []).map(item=>`<div class="tka-major-row"><div class="tka-major-name">${item.major}</div><div class="tka-major-subjects">${item.options?.length ? item.options.map(x=>renderSubjectChip(x,'mini')).join('') : `<span class="tka-custom-label">${item.customLabel || 'Sesuaikan dengan prodi target.'}</span>`}</div></div>`).join('')}
+        </div>` : ''}
         <div class="tka-source-note">${guidance.note || 'Gunakan sebagai panduan awal. Pilihan final menyesuaikan prodi target dan mapel yang tercantum di rapor.'}</div>
       `}
     </div>`;
+}
+
+function renderStudyRecommendationMatrix(result){
+  const recs = resultRecommendations(result);
+  if(!recs.length) return renderNoQualifiedRecommendations(result);
+  return `<div class="study-matrix">
+    <div class="study-matrix-head"><div>Rumpun Studi</div><div>Jurusan Umum</div><div>Ilmu Keislaman</div><div>Kecocokan & TKA</div></div>
+    ${recs.map(item=>{
+      const g = buildTkaGuidance([item]);
+      const umumTka = g.priorityElectives || [];
+      const islamTka = g.islamicPriorityElectives || [];
+      return `<div class="study-matrix-row">
+        <div class="study-matrix-cluster" data-label="Rumpun Studi"><b>${item.cluster}</b>${fitBadge(item.percent)}</div>
+        <div data-label="Jurusan Umum"><span class="matrix-label">Jurusan Umum</span><p>${(item.majors||[]).join(', ') || '—'}</p></div>
+        <div class="islamic-column" data-label="Ilmu Keislaman"><span class="matrix-label">Ilmu Keislaman</span><p>${(item.islamicMajors||[]).join(', ') || '—'}</p></div>
+        <div data-label="Kecocokan & TKA"><div class="matrix-score">${item.percent}%</div><small>Umum: ${umumTka.join(', ') || 'sesuaikan prodi'}</small>${(item.islamicMajors||[]).length ? `<small class="islamic-tka">Keislaman: ${islamTka.join(', ') || 'sesuaikan prodi'}</small>` : ''}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
 function renderRecommendationTka(item){
@@ -529,7 +553,7 @@ function showResult(result){
     ${renderParticipantReportData(result)}
     <div class="result-hero">
       <div class="result-score-box"><small>Profil RIASEC dominan</small><b>${result.topRiasec.map(x=>`${x.label} (${x.code})`).join(' • ')}</b><div style="color:#fff4cc;line-height:1.7">${result.topRiasec.map(x=>x.description).join(' ')}</div></div>
-      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${(topRec.majors||[]).join(', ')}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div></div>
+      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${(topRec.majors||[]).join(', ')}${(topRec.islamicMajors||[]).length ? `<br><span style="color:#b9f5e8">Ilmu Keislaman: ${(topRec.islamicMajors||[]).join(', ')}</span>` : ''}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div></div>
     </div>
     <div class="card" style="padding:0;background:none;border:none;box-shadow:none">
       <div class="panel-header"><div><h3>Skor RIASEC</h3></div></div>
@@ -543,8 +567,8 @@ function showResult(result){
     </div>
     <div class="card recommendation-policy-card" style="margin-top:18px">
       <div class="panel-header"><div><h3>Rekomendasi rumpun studi</h3><p>${result.summaryNarrative}</p></div><span class="threshold-chip">Batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%</span></div>
-      ${recs.length ? `<div class="reco-list">${recs.map(item=>`<div class="reco-card result-reco-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${item.majors.join(', ')}<br>${(item.reasons||[]).join(' ')}</small>${renderRecommendationTka(item)}</div>`).join('')}</div>` : renderNoQualifiedRecommendations(result)}
-      ${recs.length && alternatives.length ? `<div class="alternative-section"><div class="alternative-title"><b>Alternatif eksplorasi</b><small>Skor 50–59% tidak masuk rekomendasi utama.</small></div><div class="reco-list">${alternatives.map(item=>`<div class="reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}</small></div>`).join('')}</div></div>` : ''}
+      ${renderStudyRecommendationMatrix(result)}
+      ${recs.length && alternatives.length ? `<div class="alternative-section"><div class="alternative-title"><b>Alternatif eksplorasi</b><small>Skor 50–59% tidak masuk rekomendasi utama.</small></div><div class="reco-list">${alternatives.map(item=>`<div class="reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}${(item.islamicMajors||[]).length ? `<br><b>Ilmu Keislaman:</b> ${(item.islamicMajors||[]).join(', ')}` : ''}</small></div>`).join('')}</div></div>` : ''}
       <div class="score-disclaimer">Persentase kecocokan menunjukkan tingkat keselarasan profil peserta dengan karakteristik rumpun studi. Angka ini bukan probabilitas keberhasilan kuliah dan bukan jaminan kecocokan mutlak.</div>
     </div>
     ${renderResultNextSteps(result)}`;

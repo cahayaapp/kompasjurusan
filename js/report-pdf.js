@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=9.9';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=9.9';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.3';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.3';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=10.3';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -272,12 +272,15 @@ function drawReadingGuide(ctx,y){
 
 function drawStudyTable(ctx,result,y){
   const recs=recommendationsForResult(result,5);
-  const cols=[60,125,380,780,1180];
-  const widths=[65,255,400,400];
-  const headers=['#','Rumpun Studi','Jurusan yang Direkomendasikan','Mapel Pilihan TKA yang Perlu Diperdalam'];
-  rr(ctx,60,y,1120,58,16,C.navy);
-  headers.forEach((h,i)=>{font(ctx,16,800,C.white);textBlock(ctx,h,cols[i]+12,y+18,widths[i]-24,{size:16,weight:800,color:C.white,lineHeight:1.1,maxLines:2});});
-  y+=58;
+  // # | Rumpun | Jurusan Umum | Ilmu Keislaman | TKA
+  const cols=[60,112,322,617,912,1180];
+  const widths=[52,210,295,295,268];
+  const headers=['#','Rumpun Studi','Jurusan Umum','Ilmu Keislaman','Mapel Pilihan TKA'];
+  rr(ctx,60,y,1120,72,16,C.navy);
+  headers.forEach((h,i)=>{
+    textBlock(ctx,h,cols[i]+10,y+17,widths[i]-20,{size:14,weight:800,color:C.white,lineHeight:1.15,maxLines:3});
+  });
+  y+=72;
   if(!recs.length){
     ctx.fillStyle='#F8FBFE';ctx.fillRect(60,y,1120,118);
     font(ctx,20,800,C.navy);ctx.fillText(`Belum ada rumpun yang mencapai batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%.`,88,y+22);
@@ -286,18 +289,45 @@ function drawStudyTable(ctx,result,y){
   }
   recs.forEach((rec,idx)=>{
     const guidance=buildTkaGuidance([rec]);
-    const subjects=(guidance.priorityElectives||[]).join(', ')||'Sesuaikan prodi spesifik';
-    const majors=(rec.majors||[]).join(', ');
-    font(ctx,17,600,C.ink);
-    const h=Math.max(104,Math.max(wrap(ctx,majors,widths[2]-26).length,wrap(ctx,subjects,widths[3]-26).length)*25+38);
+    const umumTka=(guidance.priorityElectives||[]);
+    const islamTka=(guidance.islamicPriorityElectives||[]);
+    const majors=(rec.majors||[]).join(', ') || '—';
+    const islamicMajors=(rec.islamicMajors||[]).join(', ') || '—';
+    const tkaText = (rec.islamicMajors||[]).length
+      ? `Umum: ${umumTka.join(', ') || 'sesuaikan prodi'}\nKeislaman: ${islamTka.join(', ') || 'sesuaikan prodi'}`
+      : `${umumTka.join(', ') || 'Sesuaikan prodi spesifik'}`;
+
+    font(ctx,15,600,C.ink);
+    const lineCounts=[
+      wrap(ctx,rec.cluster||'-',widths[1]-20).length,
+      wrap(ctx,majors,widths[2]-20).length,
+      wrap(ctx,islamicMajors,widths[3]-20).length,
+      ...String(tkaText).split('\n').map(part=>wrap(ctx,part,widths[4]-20).length)
+    ];
+    const h=Math.max(112,Math.max(...lineCounts)*22+48);
     ctx.fillStyle=idx%2===0?'#F8FBFE':'#F1F6FB';ctx.fillRect(60,y,1120,h);
     line(ctx,60,y+h,1180,y+h,'#DCE6F1',1);
-    font(ctx,20,800,C.blue);ctx.fillText(String(idx+1),84,y+20);
-    font(ctx,20,800,C.navy);ctx.fillText(`${rec.cluster||'-'}`,137,y+17);
+    // vertical guides
+    [112,322,617,912].forEach(x=>line(ctx,x,y,x,y+h,'#E3EBF4',1));
+
+    font(ctx,18,800,C.blue);ctx.fillText(String(idx+1),78,y+22);
+    textBlock(ctx,rec.cluster||'-',124,y+18,widths[1]-24,{size:17,weight:800,color:C.navy,lineHeight:1.25,maxLines:4});
     const fit=getFitInterpretation(rec.percent);
-    font(ctx,16,700,C.green);ctx.fillText(`${rec.percent||0}% • ${fit.label}`,137,y+48);
-    textBlock(ctx,majors,392,y+17,widths[2]-26,{size:17,weight:600,color:C.ink,lineHeight:1.4,maxLines:6});
-    textBlock(ctx,subjects,792,y+17,widths[3]-26,{size:17,weight:700,color:C.teal,lineHeight:1.4,maxLines:6});
+    textBlock(ctx,`${rec.percent||0}% • ${fit.label}`,124,y+h-35,widths[1]-24,{size:13,weight:700,color:C.green,lineHeight:1.1,maxLines:1});
+
+    textBlock(ctx,majors,334,y+18,widths[2]-24,{size:15,weight:600,color:C.ink,lineHeight:1.32,maxLines:7});
+    textBlock(ctx,islamicMajors,629,y+18,widths[3]-24,{size:15,weight:650,color:(rec.islamicMajors||[]).length?C.teal:C.muted,lineHeight:1.32,maxLines:7});
+
+    let ty=y+18;
+    if((rec.islamicMajors||[]).length){
+      font(ctx,13,800,C.muted);ctx.fillText('UMUM',924,ty);ty+=20;
+      ty=textBlock(ctx,umumTka.join(', ')||'Sesuaikan prodi',924,ty,widths[4]-24,{size:14,weight:700,color:C.teal,lineHeight:1.28,maxLines:4});
+      ty+=8;
+      font(ctx,13,800,C.muted);ctx.fillText('KEISLAMAN',924,ty);ty+=20;
+      textBlock(ctx,islamTka.join(', ')||'Sesuaikan prodi',924,ty,widths[4]-24,{size:14,weight:700,color:C.orange,lineHeight:1.28,maxLines:4});
+    }else{
+      textBlock(ctx,umumTka.join(', ')||'Sesuaikan prodi spesifik',924,ty,widths[4]-24,{size:14,weight:700,color:C.teal,lineHeight:1.3,maxLines:6});
+    }
     y+=h;
   });
   line(ctx,60,y,1180,y,'#C8D7E8',2);
@@ -393,24 +423,45 @@ async function buildCanvases(result,participant){
   const logo=await loadImage('assets/logo-icon.svg');
   const pages=[];
   const totalPages=5;
-  // Page 1 - hasil utama peserta
+
+  // Halaman 1 — identitas dan ringkasan hasil utama
   let p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,1,totalPages,result,participant,logo);
-  let y=205; y=drawParticipantCard(p.ctx,result,participant,y); y=drawSummary(p.ctx,result,y); y=drawRiasec(p.ctx,result,y); drawInterpretation(p.ctx,result,y); drawFooter(p.ctx,1);
-  // Page 2 - penjelasan asesmen dan empat dimensi
+  let y=205;
+  y=drawParticipantCard(p.ctx,result,participant,y);
+  y=drawSummary(p.ctx,result,y);
+  y=drawRiasec(p.ctx,result,y);
+  drawInterpretation(p.ctx,result,y);
+  drawFooter(p.ctx,1);
+
+  // Halaman 2 — rumpun studi, jurusan umum, ilmu keislaman, dan persiapan TKA
   p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,2,totalPages,result,participant,logo); y=205;
-  drawAssessmentInfoPage(p.ctx,y); drawFooter(p.ctx,2);
-  // Page 3 - RIASEC dan cara membaca hasil
+  y=drawSectionBand(p.ctx,'Rekomendasi Rumpun Studi & Persiapan TKA',y,`Setiap rumpun menampilkan jurusan umum dan pilihan Ilmu Keislaman yang relevan. Batas rekomendasi utama ${RECOMMENDATION_MIN_PERCENT}%.`);
+  y=drawMandatoryTka(p.ctx,result,y);
+  y=drawStudyTable(p.ctx,result,y);
+  if(y<1490) y=drawAlternativeStudy(p.ctx,result,y);
+  drawFooter(p.ctx,2);
+
+  // Halaman 3 — penjabaran skor dan langkah tindak lanjut
   p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,3,totalPages,result,participant,logo); y=205;
-  drawRiasecGuidePage(p.ctx,y); drawFooter(p.ctx,3);
-  // Page 4 - rekomendasi studi dan TKA
+  y=drawSectionBand(p.ctx,'Penjabaran Hasil',y,'Dimensi pendukung, fokus persiapan, dan rekomendasi tindak lanjut.');
+  y=drawDetailedScores(p.ctx,result,y);
+  if(y<1240) y=drawTopClusterBreakdown(p.ctx,result,y);
+  drawNextSteps(p.ctx,result,y+12);
+  drawFooter(p.ctx,3);
+
+  // Halaman 4 — penjelasan tentang asesmen dan empat dimensi
   p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,4,totalPages,result,participant,logo); y=205;
-  y=drawSectionBand(p.ctx,'Rekomendasi Rumpun Studi & Persiapan TKA',y,`Rekomendasi utama menggunakan batas minimum ${RECOMMENDATION_MIN_PERCENT}% dan dilengkapi arahan mapel TKA.`);
-  y=drawMandatoryTka(p.ctx,result,y); y=drawStudyTable(p.ctx,result,y); y=drawAlternativeStudy(p.ctx,result,y); if(y<1380) y=drawTopClusterBreakdown(p.ctx,result,y); drawFooter(p.ctx,4);
-  // Page 5 - penjabaran hasil
+  drawAssessmentInfoPage(p.ctx,y);
+  drawFooter(p.ctx,4);
+
+  // Halaman 5 — RIASEC dan panduan membaca hasil
   p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,5,totalPages,result,participant,logo); y=205;
-  y=drawSectionBand(p.ctx,'Penjabaran Hasil',y,'Dimensi pendukung dan rekomendasi tindak lanjut.'); y=drawDetailedScores(p.ctx,result,y); drawNextSteps(p.ctx,result,y+12); drawFooter(p.ctx,5);
+  drawRiasecGuidePage(p.ctx,y);
+  drawFooter(p.ctx,5);
+
   return pages;
 }
+
 
 function base64ToBytes(dataUrl){
   const b64=dataUrl.split(',')[1];
