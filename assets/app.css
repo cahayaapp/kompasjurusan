@@ -425,3 +425,5 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 .main-area{position:relative;z-index:1}
 @media(min-width:761px){.modal{z-index:150}.sidebar{z-index:200!important}}
 @media(max-width:760px){.mobile-bottom-nav,.mobile-bottom-nav button{pointer-events:auto!important}.mobile-bottom-nav{z-index:200!important}}
+
+#adminBootStatus{margin:12px 0 0}#adminBootStatus:empty{display:none}

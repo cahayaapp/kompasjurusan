@@ -1,10 +1,22 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=11.1';
-import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=11.1';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.1';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.1';
+import { defaultPublicSettings } from './data.js?v=11.2';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.2';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.2';
+
+
+let pdfModulePromise = null;
+async function getPdfModule(){
+  if(!pdfModulePromise){
+    pdfModulePromise = import('./report-pdf.js?v=11.2').catch(err=>{
+      pdfModulePromise = null;
+      console.error('Modul PDF gagal dimuat', err);
+      throw err;
+    });
+  }
+  return pdfModulePromise;
+}
 
 const state = {
   user: null,
@@ -314,6 +326,7 @@ async function handleAdminPdfByKey(uid,id,button){
     if(!result) throw new Error('Data hasil asesmen tidak ditemukan.');
     const participant = await resolveParticipant(result);
     const safeName = (participant?.name || 'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    const { downloadAssessmentPdf } = await getPdfModule();
     await downloadAssessmentPdf(result, participant, { filename:`hasil-kompas-jurusan-${safeName || 'peserta'}.pdf` });
   }catch(err){
     console.error('Admin PDF failed', err);
@@ -552,7 +565,8 @@ document.getElementById('adminResultModal')?.addEventListener('click',e=>{if(e.t
 document.getElementById('downloadResultFromModalBtn')?.addEventListener('click',async e=>{
   if(!state.currentResult) return;
   const btn=e.currentTarget;const original=btn.innerHTML;
-  try{btn.disabled=true;btn.innerHTML='Menyiapkan PDF...';const participant=await resolveParticipant(state.currentResult);await downloadAssessmentPdf(state.currentResult,participant);}
+  try{btn.disabled=true;btn.innerHTML='Menyiapkan PDF...';const participant=await resolveParticipant(state.currentResult);const { downloadAssessmentPdf } = await getPdfModule();
+    await downloadAssessmentPdf(state.currentResult,participant);}
   catch(err){console.error(err);alert('PDF belum dapat dibuat.');}
   finally{btn.disabled=false;btn.innerHTML=original;}
 });
@@ -562,43 +576,83 @@ function showPaymentsError(message){
   if(el) setMessage(el, message, 'error');
 }
 
+
+function setAdminBootStatus(text='', type='info'){
+  let el=document.getElementById('adminBootStatus');
+  if(!el){
+    el=document.createElement('div');
+    el.id='adminBootStatus';
+    const hero=document.querySelector('#section-dashboard .dashboard-hero');
+    if(hero) hero.insertAdjacentElement('afterend',el);
+  }
+  if(el) setMessage(el,text,type);
+}
+
+async function primeAdminData(){
+  const jobs=[
+    ['users', ref(db,'users'), raw=>{
+      state.participants=Object.entries(raw||{}).map(([uid,val])=>({uid,...val})).filter(x=>x.role==='participant');
+    }],
+    ['payments', ref(db,'payments'), raw=>{ state.legacyPayments=normalizePayments(raw||{}); }],
+    ['results', ref(db,'results'), raw=>{
+      state.results=Object.entries(raw||{}).flatMap(([uid,group])=>Object.entries(group||{}).map(([id,val])=>({uid,id,name:val.participant?.name,...val}))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    }]
+  ];
+  const settled=await Promise.allSettled(jobs.map(async ([name,r,apply])=>{
+    const snap=await get(r); apply(snap.val()||{}); return name;
+  }));
+  mergePaymentSources(); renderParticipants(); renderResults(); summarize();
+  const failed=settled.filter(x=>x.status==='rejected');
+  if(failed.length) console.warn('Sebagian data awal admin gagal dimuat',failed);
+  return failed.length===0;
+}
+
 async function init(){
+  setAdminBootStatus('Menghubungkan dashboard ke data peserta...','info');
   const { user, profile } = await guardPage('admin');
   state.user = user; state.profile = profile; paintProfile(); activateSection('section-dashboard');
 
-  onValue(dbRefs.settingsPublic(), snap => { state.settings = { ...defaultPublicSettings(), ...(snap.val() || {}) }; renderSettings(); });
+  // Muat snapshot awal lebih dulu. Dashboard tidak lagi bergantung pada modul PDF.
+  try{
+    await primeAdminData();
+    setAdminBootStatus('', 'info');
+  }catch(err){
+    console.warn('Initial admin preload failed',err);
+    setAdminBootStatus('Sebagian data belum termuat. Dashboard sedang mencoba menyambungkan ulang secara otomatis.','error');
+  }
+
+  onValue(dbRefs.settingsPublic(), snap => { state.settings = { ...defaultPublicSettings(), ...(snap.val() || {}) }; renderSettings(); }, err=>console.warn('settings read failed',err));
   onValue(ref(db, 'users'), snap => {
     state.participants = Object.entries(snap.val() || {}).map(([uid,val])=>({uid,...val})).filter(x=>x.role==='participant');
-    renderParticipants(); summarize(); mergePaymentSources();
-  }, err=> console.error('users read failed', err));
+    renderParticipants(); summarize(); mergePaymentSources(); setAdminBootStatus('', 'info');
+  }, err=> { console.error('users read failed', err); setAdminBootStatus('Data peserta belum dapat dibaca. Periksa login admin atau rules database.','error'); });
 
-  // Sumber utama baru: indeks ringan agar dashboard pembayaran cepat dan stabil.
   onValue(dbRefs.paymentIndexRoot(), snap => {
     state.paymentIndex = Object.entries(snap.val() || {}).map(([id,val])=>({ id, paymentId:id, ...val }));
     mergePaymentSources();
     const el = document.getElementById('paymentsLoadError'); if(el) el.innerHTML = '';
   }, err=>{
     console.warn('paymentIndex read failed', err);
-    showPaymentsError('Indeks pembayaran belum dapat dibaca. Dashboard akan mencoba membaca data konfirmasi lama. Publish database.rules.json terbaru agar antrean admin bekerja optimal.');
+    showPaymentsError('Indeks pembayaran belum dapat dibaca. Dashboard tetap mencoba sumber pembayaran utama.');
   });
 
-  // Kompatibilitas semua data lama + backup bila paymentIndex belum ada.
   onValue(ref(db, 'payments'), snap => {
     state.legacyPayments = normalizePayments(snap.val() || {});
     mergePaymentSources();
   }, err=>{
     console.error('payments read failed', err);
-    showPaymentsError('Data pembayaran tidak dapat dibaca oleh akun admin. Pastikan role akun adalah "admin" dan database.rules.json terbaru sudah dipublish.');
+    showPaymentsError('Data pembayaran tidak dapat dibaca oleh akun admin. Pastikan role akun adalah admin.');
   });
 
   onValue(ref(db, 'results'), snap => {
     const raw = snap.val() || {};
     state.results = Object.entries(raw).flatMap(([uid, group]) => Object.entries(group || {}).map(([id, val])=>({ uid, id, name: val.participant?.name, ...val }))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     summarize(); renderParticipants(); renderResults();
-  }, err=> console.error('results read failed', err));
+  }, err=>{ console.error('results read failed', err); setAdminBootStatus('Data hasil tes belum dapat dibaca. Dashboard akan mencoba lagi otomatis.','error'); });
 }
 
 init().catch(err=>{
-  console.error(err);
-  showPaymentsError('Dashboard admin gagal memuat data. Silakan login ulang dan pastikan rules Firebase terbaru sudah dipublish.');
+  console.error('ADMIN BOOT ERROR',err);
+  setAdminBootStatus('Dashboard admin gagal memuat data. Silakan login ulang. Jika tetap terjadi, periksa Console browser untuk pesan ADMIN BOOT ERROR.','error');
+  showPaymentsError('Dashboard admin gagal memuat data. Data di database tidak dihapus.');
 });
