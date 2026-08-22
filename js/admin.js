@@ -1,22 +1,12 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=11.5';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.5';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.5';
+import { defaultPublicSettings } from './data.js?v=11.6';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.6';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.6';
+import { downloadAssessmentPdf } from './report-pdf.js?v=11.6';
 
 
-let pdfModulePromise = null;
-async function getPdfModule(){
-  if(!pdfModulePromise){
-    pdfModulePromise=import('./report-pdf.js?v=11.5').catch(err=>{
-      pdfModulePromise=null;
-      console.error('Modul PDF gagal dimuat',err);
-      throw err;
-    });
-  }
-  return pdfModulePromise;
-}
 
 const state = {
   user: null,
@@ -28,7 +18,6 @@ const state = {
   payments: [],
   results: [],
   paymentFilter: 'all',
-  selectedResults: new Set(),
   currentResult: null
 };
 
@@ -326,7 +315,6 @@ async function handleAdminPdfByKey(uid,id,button){
     if(!result) throw new Error('Data hasil asesmen tidak ditemukan.');
     const participant = await resolveParticipant(result);
     const safeName = (participant?.name || 'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    const { downloadAssessmentPdf } = await getPdfModule();
     await downloadAssessmentPdf(result, participant, { filename:`hasil-kompas-jurusan-${safeName || 'peserta'}.pdf` });
   }catch(err){
     console.error('Admin PDF failed', err);
@@ -365,18 +353,6 @@ function parseResultToken(token=''){
 }
 function escapeHtml(value=''){
   return String(value).replace(/[&<>'"]/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[ch]));
-}
-function updateResultSelectionUi(){
-  const valid=new Set(state.results.map(resultToken));
-  [...state.selectedResults].forEach(token=>{ if(!valid.has(token)) state.selectedResults.delete(token); });
-  const count=state.selectedResults.size;
-  const countEl=document.getElementById('resultsSelectedCount'); if(countEl) countEl.textContent=String(count);
-  const btn=document.getElementById('downloadSelectedResultsBtn'); if(btn) btn.disabled=count===0;
-  const all=document.getElementById('resultsSelectAll');
-  if(all){
-    all.checked=state.results.length>0 && count===state.results.length;
-    all.indeterminate=count>0 && count<state.results.length;
-  }
 }
 function adminFitBadge(percent){
   const fit=getFitInterpretation(percent||0);
@@ -516,8 +492,8 @@ function renderResults(){
   const tbody=document.getElementById('resultsBody');
   if(!tbody) return;
   if(!state.results.length){
-    tbody.innerHTML='<tr><td colspan="7"><div class="empty">Belum ada hasil asesmen.</div></td></tr>';
-    state.selectedResults.clear();updateResultSelectionUi();return;
+    tbody.innerHTML='<tr><td colspan="6"><div class="empty">Belum ada hasil asesmen.</div></td></tr>';
+    return;
   }
   tbody.innerHTML=state.results.map(item=>{
     const p=participantForResult(item);
@@ -525,7 +501,6 @@ function renderResults(){
     const fit=top ? getFitInterpretation(top.percent) : null;
     const token=resultToken(item);
     return `<tr>
-      <td class="check-col" data-label="Pilih"><label class="result-check"><input type="checkbox" data-result-select="${escapeHtml(token)}" ${state.selectedResults.has(token)?'checked':''}><span></span></label></td>
       <td data-label="Peserta"><strong>${escapeHtml(p.name||'-')}</strong><small>${escapeHtml(p.email||'')}</small></td>
       <td data-label="Tanggal">${escapeHtml(formatDateTime(item.createdAt))}</td>
       <td data-label="RIASEC"><span class="badge info">${escapeHtml(item.topRiasec?.map(x=>x.code).join('-')||'-')}</span></td>
@@ -534,16 +509,10 @@ function renderResults(){
       <td data-label="Aksi"><div class="result-row-actions"><button class="btn btn-secondary btn-sm" data-admin-view="${escapeHtml(token)}">Lihat Hasil</button><button class="btn btn-primary btn-sm" data-admin-pdf="${escapeHtml(token)}">⬇ PDF</button></div></td>
     </tr>`;
   }).join('');
-  tbody.querySelectorAll('[data-result-select]').forEach(cb=>cb.addEventListener('change',()=>{
-    const token=cb.dataset.resultSelect;
-    if(cb.checked) state.selectedResults.add(token); else state.selectedResults.delete(token);
-    updateResultSelectionUi();
-  }));
   tbody.querySelectorAll('[data-admin-view]').forEach(btn=>btn.addEventListener('click',()=>{
     const {uid,id}=parseResultToken(btn.dataset.adminView);openAdminResultByKey(uid,id);
   }));
   bindAdminPdfButtons();
-  updateResultSelectionUi();
 }
 
 document.getElementById('settingsForm')?.addEventListener('submit', async e=>{
@@ -566,20 +535,12 @@ function renderSettings(){
 }
 
 
-document.getElementById('resultsSelectAll')?.addEventListener('change',e=>{
-  state.selectedResults.clear();
-  if(e.target.checked) state.results.forEach(item=>state.selectedResults.add(resultToken(item)));
-  renderResults();
-});
-document.getElementById('downloadSelectedResultsBtn')?.addEventListener('click',downloadSelectedResults);
-document.getElementById('downloadResultsRecapBtn')?.addEventListener('click',downloadAllResultsRecap);
 document.getElementById('closeAdminResultModal')?.addEventListener('click',()=>toggleModal(document.getElementById('adminResultModal'),false));
 document.getElementById('adminResultModal')?.addEventListener('click',e=>{if(e.target.id==='adminResultModal')toggleModal(document.getElementById('adminResultModal'),false);});
 document.getElementById('downloadResultFromModalBtn')?.addEventListener('click',async e=>{
   if(!state.currentResult) return;
   const btn=e.currentTarget;const original=btn.innerHTML;
-  try{btn.disabled=true;btn.innerHTML='Menyiapkan PDF...';const participant=await resolveParticipant(state.currentResult);const { downloadAssessmentPdf } = await getPdfModule();
-    await downloadAssessmentPdf(state.currentResult,participant);}
+  try{btn.disabled=true;btn.innerHTML='Menyiapkan PDF...';const participant=await resolveParticipant(state.currentResult);await downloadAssessmentPdf(state.currentResult,participant);}
   catch(err){console.error(err);alert('PDF belum dapat dibuat.');}
   finally{btn.disabled=false;btn.innerHTML=original;}
 });

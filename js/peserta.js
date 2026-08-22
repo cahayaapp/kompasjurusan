@@ -1,22 +1,12 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
-import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=11.5';
-import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.5';
-import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=11.5';
-import { renderAssessmentInfoHtml } from './assessment-info.js?v=11.5';
+import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=11.6';
+import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.6';
+import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=11.6';
+import { downloadAssessmentPdf } from './report-pdf.js?v=11.6';
+import { renderAssessmentInfoHtml } from './assessment-info.js?v=11.6';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 
-let pdfModulePromise = null;
-async function getPdfModule(){
-  if(!pdfModulePromise){
-    pdfModulePromise=import('./report-pdf.js?v=11.5').catch(err=>{
-      pdfModulePromise=null;
-      console.error('Modul PDF gagal dimuat',err);
-      throw err;
-    });
-  }
-  return pdfModulePromise;
-}
 
 const state = {
   user: null,
@@ -625,7 +615,6 @@ async function handlePdfDownload(result, button){
   const original = button?.innerHTML;
   try{
     if(button){ button.disabled = true; button.innerHTML = 'Menyiapkan PDF...'; }
-    const { downloadAssessmentPdf } = await getPdfModule();
     await downloadAssessmentPdf(result, state.profile || result.participant || {});
   }catch(err){
     console.error(err);

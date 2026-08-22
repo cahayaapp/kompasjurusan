@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard Admin — Kompas Jurusan</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/app.css?v=11.5">
+  <link rel="stylesheet" href="assets/app.css?v=11.6">
 </head>
 <body>
   <div class="app-shell">
@@ -68,16 +68,10 @@
       <section id="section-results" class="section">
         <div class="topbar"><div class="page-title"><h1>Laporan Hasil Tes</h1><p>Lihat hasil peserta, unduh laporan satu per satu, unduh massal hasil yang dipilih, atau gabungkan seluruh hasil ke dalam satu PDF rekap.</p></div></div>
         <div class="card">
-          <div class="results-toolbar">
-            <div class="results-toolbar-copy"><h3>Semua Hasil Asesmen</h3><p>Centang laporan yang ingin diunduh massal. Setiap laporan tetap menjadi file PDF terpisah.</p></div>
-            <div class="results-toolbar-actions">
-              <span class="selection-counter"><b id="resultsSelectedCount">0</b> dipilih</span>
-              <button class="btn btn-secondary" id="downloadSelectedResultsBtn" type="button" disabled>⬇ Download Massal</button>
-              <button class="btn btn-primary" id="downloadResultsRecapBtn" type="button">▤ Download Rekap Semua</button>
-            </div>
-          </div>
-          <div id="resultsBatchMessage"></div>
-          <div class="table-wrap"><table class="results-table"><thead><tr><th class="check-col"><label class="result-check"><input id="resultsSelectAll" type="checkbox" aria-label="Pilih semua hasil"><span></span></label></th><th>Peserta</th><th>Tanggal Tes</th><th>RIASEC</th><th>Rumpun Utama</th><th>Kecocokan</th><th>Aksi</th></tr></thead><tbody id="resultsBody"><tr><td colspan="7"><div class="empty">Memuat hasil asesmen...</div></td></tr></tbody></table></div>
+                  <div class="results-toolbar">
+          <div class="results-toolbar-copy"><h3>Semua Hasil Asesmen</h3><p>Lihat hasil peserta atau unduh laporan PDF satu per satu.</p></div>
+        </div>
+        <div class="table-wrap"><table class="results-table"><thead><tr><th>Peserta</th><th>Tanggal Tes</th><th>RIASEC</th><th>Rumpun Utama</th><th>Kecocokan</th><th>Aksi</th></tr></thead><tbody id="resultsBody"><tr><td colspan="6"><div class="empty">Memuat hasil asesmen...</div></td></tr></tbody></table></div>
         </div>
       </section>
 
@@ -159,6 +153,6 @@
       window.__kompasOpenSection=openSection;
     })();
   </script>
-  <script type="module" src="js/admin.js?v=11.5"></script>
+  <script type="module" src="js/admin.js?v=11.6"></script>
 </body>
 </html>

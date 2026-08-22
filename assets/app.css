@@ -427,3 +427,6 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 @media(max-width:760px){.mobile-bottom-nav,.mobile-bottom-nav button{pointer-events:auto!important}.mobile-bottom-nav{z-index:200!important}}
 
 #adminBootStatus{margin:12px 0 0}#adminBootStatus:empty{display:none}
+
+/* V11.6 — hasil tes kembali ke download PDF satuan */
+.results-toolbar{justify-content:flex-start}.results-toolbar-actions,.selection-counter,.check-col,.result-check{display:none!important}
