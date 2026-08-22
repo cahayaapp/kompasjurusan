@@ -1,38 +1,18 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=11.3';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.3';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.3';
+import { defaultPublicSettings } from './data.js?v=11.4';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.4';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.4';
 
 
 let pdfModulePromise = null;
 async function getPdfModule(){
-  if(window.KompasPdfModule) return window.KompasPdfModule;
   if(!pdfModulePromise){
-    pdfModulePromise = new Promise((resolve,reject)=>{
-      let settled=false;
-      const finish=()=>{
-        if(settled) return;
-        if(window.KompasPdfModule){ settled=true; resolve(window.KompasPdfModule); }
-      };
-      window.addEventListener('kompas-pdf-ready',finish,{once:true});
-      // Fallback bila bridge belum selesai dalam 4 detik.
-      setTimeout(async()=>{
-        if(settled) return;
-        try{
-          const mod=await import('./report-pdf.js?v=11.3-fallback');
-          window.KompasPdfModule=mod;
-          settled=true;
-          resolve(mod);
-        }catch(err){
-          settled=true;
-          pdfModulePromise=null;
-          console.error('Modul PDF gagal dimuat',err);
-          reject(err);
-        }
-      },4000);
-      finish();
+    pdfModulePromise=import('./report-pdf.js?v=11.4').catch(err=>{
+      pdfModulePromise=null;
+      console.error('Modul PDF gagal dimuat',err);
+      throw err;
     });
   }
   return pdfModulePromise;

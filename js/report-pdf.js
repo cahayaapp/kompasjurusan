@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.3';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.3';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=11.3';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.4';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.4';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=11.4';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -110,6 +110,76 @@ async function loadImage(src){
     img.onerror=()=>resolve(null);
     img.src=src;
   });
+}
+
+
+let jsPdfLoaderPromise = null;
+function loadExternalScript(src){
+  return new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(s=>s.src===src || s.dataset.kompasJspdf===src);
+    if(existing){
+      if(window.jspdf?.jsPDF) return resolve();
+      // Script preload sudah selesai tetapi tidak menghasilkan jsPDF (mis. CDN gagal).
+      // Lepaskan agar fallback dapat mencoba ulang dengan sumber lain.
+      existing.remove();
+    }
+    const script=document.createElement('script');
+    script.src=src;
+    script.async=true;
+    script.dataset.kompasJspdf=src;
+    script.onload=()=>resolve();
+    script.onerror=()=>reject(new Error(`Gagal memuat ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureJsPdf(){
+  if(window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+  if(!jsPdfLoaderPromise){
+    jsPdfLoaderPromise=(async()=>{
+      const sources=[
+        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+        'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js'
+      ];
+      let lastError=null;
+      for(const src of sources){
+        try{
+          await loadExternalScript(src);
+          if(window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+        }catch(err){ lastError=err; }
+      }
+      throw lastError || new Error('Mesin PDF gagal dimuat. Periksa koneksi internet lalu coba lagi.');
+    })().catch(err=>{ jsPdfLoaderPromise=null; throw err; });
+  }
+  return jsPdfLoaderPromise;
+}
+
+async function canvasesToJsPdfBlob(canvases, quality=.9){
+  if(!Array.isArray(canvases) || !canvases.length) throw new Error('Halaman laporan tidak tersedia.');
+  const jsPDF=await ensureJsPdf();
+  const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4',compress:true,putOnlyUsedFonts:true});
+  for(let i=0;i<canvases.length;i++){
+    if(i>0) doc.addPage('a4','portrait');
+    const canvas=canvases[i];
+    const image=canvas.toDataURL('image/jpeg',quality);
+    doc.addImage(image,'JPEG',0,0,PDF_W,PDF_H,undefined,'FAST');
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return doc.output('blob');
+}
+
+async function triggerPdfDownload(blob, filename){
+  if(!(blob instanceof Blob) || blob.size<500) throw new Error('File PDF gagal dibentuk.');
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.style.display='none';
+  document.body.appendChild(a);
+  if(typeof a.click==='function') a.click();
+  else a.dispatchEvent(new MouseEvent('click',{view:window,bubbles:true,cancelable:true}));
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
 async function drawHeader(ctx, pageNo, totalPages, result, participant, logo){
@@ -474,64 +544,6 @@ async function buildCanvases(result,participant){
 }
 
 
-function base64ToBytes(dataUrl){
-  const raw=String(dataUrl||'');
-  const comma=raw.indexOf(',');
-  if(comma<0) throw new Error('Data gambar PDF tidak valid.');
-  let b64=raw.slice(comma+1).replace(/\s+/g,'');
-  const remainder=b64.length%4;
-  if(remainder) b64 += '='.repeat(4-remainder);
-  let bin;
-  try{
-    bin=atob(b64);
-  }catch(err){
-    console.error('Base64 PDF decode failed', {length:b64.length,remainder,err});
-    throw new Error('Gambar laporan gagal dikodekan. Silakan coba lagi.');
-  }
-  const out=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
-  return out;
-}
-function ascii(str){ return new TextEncoder().encode(str); }
-function concat(parts){
-  const total=parts.reduce((n,p)=>n+p.length,0); const out=new Uint8Array(total); let off=0;
-  parts.forEach(p=>{out.set(p,off);off+=p.length;}); return out;
-}
-
-function canvasesToPdf(canvases){
-  const jpgs=canvases.map(c=>base64ToBytes(c.toDataURL('image/jpeg',0.93)));
-  const objects=[];
-  const kids=[];
-  // placeholders by object number index (1-based)
-  objects[1]=ascii('<< /Type /Catalog /Pages 2 0 R >>');
-  canvases.forEach((_,i)=>kids.push(`${3+i*3} 0 R`));
-  objects[2]=ascii(`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${canvases.length} >>`);
-  jpgs.forEach((jpg,i)=>{
-    const pageObj=3+i*3, contentObj=pageObj+1, imageObj=pageObj+2;
-    objects[pageObj]=ascii(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_W} ${PDF_H}] /Resources << /XObject << /Im0 ${imageObj} 0 R >> >> /Contents ${contentObj} 0 R >>`);
-    const stream=`q\n${PDF_W} 0 0 ${PDF_H} 0 0 cm\n/Im0 Do\nQ\n`;
-    objects[contentObj]=ascii(`<< /Length ${stream.length} >>\nstream\n${stream}endstream`);
-    objects[imageObj]=concat([
-      ascii(`<< /Type /XObject /Subtype /Image /Width ${PAGE_W} /Height ${PAGE_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`),
-      jpg,
-      ascii('\nendstream')
-    ]);
-  });
-  const header=ascii('%PDF-1.4\n%KJPDF\n');
-  const parts=[header]; const offsets=[0]; let pos=header.length;
-  const maxObj=objects.length-1;
-  for(let n=1;n<=maxObj;n++){
-    offsets[n]=pos;
-    const obj=concat([ascii(`${n} 0 obj\n`),objects[n],ascii('\nendobj\n')]);
-    parts.push(obj); pos+=obj.length;
-  }
-  const xrefPos=pos;
-  let xref=`xref\n0 ${maxObj+1}\n0000000000 65535 f \n`;
-  for(let n=1;n<=maxObj;n++) xref+=`${String(offsets[n]).padStart(10,'0')} 00000 n \n`;
-  xref+=`trailer\n<< /Size ${maxObj+1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
-  parts.push(ascii(xref));
-  return new Blob([concat(parts)],{type:'application/pdf'});
-}
 
 
 function drawRecapHeader(ctx, pageNo, totalPages, result, participant, logo){
@@ -638,61 +650,54 @@ function drawRecapDimensions(ctx,result,y){
   return y+210;
 }
 
-function jpgsToPdf(jpgs){
-  const objects=[];const kids=[];
-  objects[1]=ascii('<< /Type /Catalog /Pages 2 0 R >>');
-  jpgs.forEach((_,i)=>kids.push(`${3+i*3} 0 R`));
-  objects[2]=ascii(`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${jpgs.length} >>`);
-  jpgs.forEach((jpg,i)=>{
-    const pageObj=3+i*3,contentObj=pageObj+1,imageObj=pageObj+2;
-    objects[pageObj]=ascii(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_W} ${PDF_H}] /Resources << /XObject << /Im0 ${imageObj} 0 R >> >> /Contents ${contentObj} 0 R >>`);
-    const stream=`q\n${PDF_W} 0 0 ${PDF_H} 0 0 cm\n/Im0 Do\nQ\n`;
-    objects[contentObj]=ascii(`<< /Length ${stream.length} >>\nstream\n${stream}endstream`);
-    objects[imageObj]=concat([ascii(`<< /Type /XObject /Subtype /Image /Width ${PAGE_W} /Height ${PAGE_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`),jpg,ascii('\nendstream')]);
-  });
-  const header=ascii('%PDF-1.4\n%KJPDF\n');const parts=[header];const offsets=[0];let pos=header.length;const maxObj=objects.length-1;
-  for(let n=1;n<=maxObj;n++){offsets[n]=pos;const obj=concat([ascii(`${n} 0 obj\n`),objects[n],ascii('\nendobj\n')]);parts.push(obj);pos+=obj.length;}
-  const xrefPos=pos;let xref=`xref\n0 ${maxObj+1}\n0000000000 65535 f \n`;
-  for(let n=1;n<=maxObj;n++) xref+=`${String(offsets[n]).padStart(10,'0')} 00000 n \n`;
-  xref+=`trailer\n<< /Size ${maxObj+1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
-  parts.push(ascii(xref));return new Blob([concat(parts)],{type:'application/pdf'});
-}
+
 
 export async function buildResultsRecapPdfBlob(entries=[]){
   const logo=await loadImage('assets/logo-icon.svg');
   const totalPages=Math.max(1,entries.length);
-  const jpgs=[];
   const source=entries.length?entries:[{result:{},participant:{}}];
+  const jsPDF=await ensureJsPdf();
+  const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4',compress:true,putOnlyUsedFonts:true});
+
   for(let i=0;i<source.length;i++){
-    const entry=source[i]||{};const result=entry.result||entry;const participant=entry.participant||result?.participant||{};
-    const p=canvasPage();drawRecapHeader(p.ctx,i+1,totalPages,result,participant,logo);let y=180;
+    if(i>0) doc.addPage('a4','portrait');
+    const entry=source[i]||{};
+    const result=entry.result||entry;
+    const participant=entry.participant||result?.participant||{};
+    const p=canvasPage();
+    drawRecapHeader(p.ctx,i+1,totalPages,result,participant,logo);
+    let y=180;
     if(entries.length){
-      y=drawRecapParticipant(p.ctx,result,participant,y);y=drawRecapSummary(p.ctx,result,y);y=drawRecapRiasec(p.ctx,result,y);y=drawRecapRecommendations(p.ctx,result,y);if(y<1435)drawRecapDimensions(p.ctx,result,y);
+      y=drawRecapParticipant(p.ctx,result,participant,y);
+      y=drawRecapSummary(p.ctx,result,y);
+      y=drawRecapRiasec(p.ctx,result,y);
+      y=drawRecapRecommendations(p.ctx,result,y);
+      if(y<1435) drawRecapDimensions(p.ctx,result,y);
     }else{
-      title(p.ctx,'Belum ada hasil asesmen',60,230,34);textBlock(p.ctx,'Belum ada data hasil yang dapat dimasukkan ke dalam rekap.',60,290,1120,{size:20,color:C.muted,lineHeight:1.4});
+      title(p.ctx,'Belum ada hasil asesmen',60,230,34);
+      textBlock(p.ctx,'Belum ada data hasil yang dapat dimasukkan ke dalam rekap.',60,290,1120,{size:20,color:C.muted,lineHeight:1.4});
     }
     drawFooter(p.ctx,i+1);
-    jpgs.push(base64ToBytes(p.canvas.toDataURL('image/jpeg',0.88)));
+    const image=p.canvas.toDataURL('image/jpeg',0.88);
+    doc.addImage(image,'JPEG',0,0,PDF_W,PDF_H,undefined,'FAST');
     p.canvas.width=1;p.canvas.height=1;
     await new Promise(resolve=>setTimeout(resolve,0));
   }
-  return jpgsToPdf(jpgs);
+  return doc.output('blob');
 }
 
 export async function downloadResultsRecapPdf(entries=[],options={}){
   const blob=await buildResultsRecapPdfBlob(entries);
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=options.filename||`rekap-hasil-kompas-jurusan-${new Date().toISOString().slice(0,10)}.pdf`;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),8000);
+  const filename=options.filename||`rekap-hasil-kompas-jurusan-${new Date().toISOString().slice(0,10)}.pdf`;
+  await triggerPdfDownload(blob,filename);
+  return blob;
 }
 
 export async function buildAssessmentPdfBlob(result,participant={}){
+  if(!result) throw new Error('Data hasil asesmen tidak tersedia.');
   const canvases=await buildCanvases(result,participant);
   try{
-    return canvasesToPdf(canvases);
+    return await canvasesToJsPdfBlob(canvases,.9);
   }finally{
     canvases.forEach(canvas=>{ try{ canvas.width=1; canvas.height=1; }catch{} });
   }
@@ -702,12 +707,8 @@ export async function downloadAssessmentPdf(result,participant={},options={}){
   if(!result) throw new Error('Data hasil asesmen tidak tersedia.');
   const merged={...(result.participant||{}),...participant};
   const blob=await buildAssessmentPdfBlob(result,merged);
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
   const date=new Date(result.createdAt||Date.now()).toISOString().slice(0,10);
-  a.href=url;
-  a.download=options.filename || `hasil-kompas-jurusan-${fileSafe(merged.name)}-${date}.pdf`;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),8000);
+  const filename=options.filename || `hasil-kompas-jurusan-${fileSafe(merged.name)}-${date}.pdf`;
+  await triggerPdfDownload(blob,filename);
   return blob;
 }
