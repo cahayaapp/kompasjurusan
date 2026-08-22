@@ -1,9 +1,10 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=10.3';
-import { downloadAssessmentPdf } from './report-pdf.js?v=10.3';
-import { recommendationsForResult, getFitInterpretation } from './scoring.js?v=10.3';
+import { defaultPublicSettings } from './data.js?v=10.6';
+import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=10.6';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=10.6';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.6';
 
 const state = {
   user: null,
@@ -14,7 +15,9 @@ const state = {
   legacyPayments: [],
   payments: [],
   results: [],
-  paymentFilter: 'all'
+  paymentFilter: 'all',
+  selectedResults: new Set(),
+  currentResult: null
 };
 
 document.querySelectorAll('[data-brand]').forEach(renderBrand);
@@ -329,24 +332,167 @@ function bindAdminPdfButtons(){
   });
 }
 
+
+function resultToken(item){ return `${item?.uid || ''}|${item?.id || ''}`; }
+function parseResultToken(token=''){
+  const at=token.indexOf('|');
+  return at<0 ? {uid:'',id:''} : {uid:token.slice(0,at),id:token.slice(at+1)};
+}
+function escapeHtml(value=''){
+  return String(value).replace(/[&<>'"]/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[ch]));
+}
+function updateResultSelectionUi(){
+  const valid=new Set(state.results.map(resultToken));
+  [...state.selectedResults].forEach(token=>{ if(!valid.has(token)) state.selectedResults.delete(token); });
+  const count=state.selectedResults.size;
+  const countEl=document.getElementById('resultsSelectedCount'); if(countEl) countEl.textContent=String(count);
+  const btn=document.getElementById('downloadSelectedResultsBtn'); if(btn) btn.disabled=count===0;
+  const all=document.getElementById('resultsSelectAll');
+  if(all){
+    all.checked=state.results.length>0 && count===state.results.length;
+    all.indeterminate=count>0 && count<state.results.length;
+  }
+}
+function adminFitBadge(percent){
+  const fit=getFitInterpretation(percent||0);
+  return `<span class="fit-badge ${fit.key || 'low'}">${escapeHtml(fit.label)}</span>`;
+}
+function renderAdminStudyRows(result){
+  const recs=recommendationsForResult(result,5);
+  if(!recs.length) return `<div class="empty">Belum ada rumpun yang mencapai batas rekomendasi utama.</div>`;
+  return `<div class="admin-study-list">${recs.map(rec=>{
+    const g=buildTkaGuidance([rec]);
+    const tka=[...(g.priorityElectives||[]),...(g.islamicPriorityElectives||[])].filter((x,i,a)=>a.indexOf(x)===i);
+    return `<div class="admin-study-row">
+      <div class="admin-study-title"><b>${escapeHtml(rec.cluster)}</b><div><strong>${rec.percent||0}%</strong>${adminFitBadge(rec.percent)}</div></div>
+      <div class="admin-study-cols">
+        <div><small>Jurusan Umum</small><p>${escapeHtml((rec.majors||[]).join(', ')||'—')}</p></div>
+        <div class="islamic-column"><small>Ilmu Keislaman</small><p>${escapeHtml((rec.islamicMajors||[]).join(', ')||'—')}</p></div>
+        <div><small>Mapel TKA Tambahan</small><p>${escapeHtml(tka.join(', ')||'Sesuaikan dengan prodi target')}</p></div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+function openAdminResult(result){
+  if(!result) return;
+  state.currentResult=result;
+  const p=participantForResult(result);
+  const recs=recommendationsForResult(result,5);
+  const top=recs[0];
+  const riasec=result.topRiasec?.[0]||{};
+  const modal=document.getElementById('adminResultModal');
+  const body=document.getElementById('adminResultModalBody');
+  const titleEl=document.getElementById('adminResultModalTitle');
+  if(titleEl) titleEl.textContent=`Hasil ${p.name||'Peserta'}`;
+  if(body) body.innerHTML=`
+    <div class="admin-result-person">
+      <div><small>Nama Peserta</small><b>${escapeHtml(p.name||'-')}</b></div>
+      <div><small>Kelas</small><b>${escapeHtml(p.className||'-')}</b></div>
+      <div><small>Sekolah/Pesantren</small><b>${escapeHtml(p.school||'-')}</b></div>
+      <div><small>Tanggal Tes</small><b>${escapeHtml(formatDateTime(result.createdAt))}</b></div>
+    </div>
+    <div class="result-hero admin-result-hero">
+      <div class="result-score-box"><small>Profil RIASEC Dominan</small><b>${escapeHtml(`${riasec.label||'-'} (${riasec.code||'-'})`)}</b><div style="color:#fff4cc;line-height:1.6">${escapeHtml(riasec.description||'')}</div></div>
+      <div class="result-score-box"><small>Rumpun Studi Terkuat</small><b>${escapeHtml(top?.cluster||'Belum mencapai 60%')}</b><div style="color:#fff4cc;line-height:1.6">${top?`${top.percent}% • ${escapeHtml(getFitInterpretation(top.percent).label)}<br>${escapeHtml((top.majors||[]).slice(0,4).join(', '))}${(top.islamicMajors||[]).length?`<br><span style="color:#b9f5e8">Ilmu Keislaman: ${escapeHtml((top.islamicMajors||[]).slice(0,4).join(', '))}</span>`:''}`:'Gunakan sebagai bahan eksplorasi lebih lanjut.'}</div></div>
+    </div>
+    <div class="admin-result-section"><div class="panel-header"><div><h3>Profil RIASEC</h3><p>Distribusi kecenderungan minat peserta.</p></div></div><div class="bars">${(result.riasecChart||[]).map(item=>`<div class="bar-item"><label>${escapeHtml(item.code||'-')}</label><div class="bar-shell"><span style="width:${Math.max(0,Math.min(100,Number(item.percent||0)))}%"></span></div><strong>${item.percent||0}%</strong></div>`).join('')}</div></div>
+    <div class="admin-result-section"><div class="panel-header"><div><h3>Rekomendasi Rumpun & Jurusan</h3><p>Jurusan umum, Ilmu Keislaman, dan fokus mapel TKA berada dalam rumpun yang sama.</p></div></div>${renderAdminStudyRows(result)}</div>
+    <div class="grid-3 admin-score-summary">
+      <div class="card"><h3>Kekuatan Akademik</h3>${(result.academic||[]).slice(0,4).map(x=>`<div class="admin-mini-score"><span>${escapeHtml(labelAcademic(x.code))}</span><b>${x.percent||0}%</b></div>`).join('')}</div>
+      <div class="card"><h3>Gaya Kerja</h3>${(result.workstyle||[]).slice(0,4).map(x=>`<div class="admin-mini-score"><span>${escapeHtml(labelWorkstyle(x.code))}</span><b>${x.percent||0}%</b></div>`).join('')}</div>
+      <div class="card"><h3>Nilai Hidup</h3>${(result.values||[]).slice(0,4).map(x=>`<div class="admin-mini-score"><span>${escapeHtml(labelValue(x.code))}</span><b>${x.percent||0}%</b></div>`).join('')}</div>
+    </div>
+    <div class="score-disclaimer">Persentase kecocokan menunjukkan tingkat keselarasan profil peserta dengan karakteristik rumpun studi, bukan peluang keberhasilan kuliah.</div>`;
+  toggleModal(modal,true);
+}
+async function openAdminResultByKey(uid,id){
+  try{
+    const result=await resolveResult(uid,id);
+    if(!result) throw new Error('Hasil tidak ditemukan.');
+    openAdminResult(result);
+  }catch(err){ alert(err.message||'Hasil belum dapat dibuka.'); }
+}
+function setBatchMessage(text,type='info'){
+  const el=document.getElementById('resultsBatchMessage');
+  if(!el) return;
+  setMessage(el,text,type);
+}
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+async function downloadSelectedResults(){
+  const btn=document.getElementById('downloadSelectedResultsBtn');
+  const tokens=[...state.selectedResults];
+  if(!tokens.length) return;
+  const original=btn?.innerHTML;
+  try{
+    if(btn){btn.disabled=true;btn.innerHTML='Menyiapkan...';}
+    setBatchMessage(`Menyiapkan ${tokens.length} laporan PDF. File akan diunduh satu per satu.`,'info');
+    let done=0;
+    for(const token of tokens){
+      const {uid,id}=parseResultToken(token);
+      const result=await resolveResult(uid,id);
+      if(!result) continue;
+      const participant=await resolveParticipant(result);
+      const safeName=String(participant?.name||'peserta').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+      await downloadAssessmentPdf(result,participant,{filename:`hasil-kompas-jurusan-${safeName||'peserta'}-${id.slice(-6)}.pdf`});
+      done++;
+      if(btn) btn.innerHTML=`Mengunduh ${done}/${tokens.length}`;
+      await sleep(350);
+    }
+    setBatchMessage(`${done} laporan berhasil diproses sebagai file PDF terpisah.`,'success');
+  }catch(err){
+    console.error(err);setBatchMessage('Sebagian laporan belum dapat diunduh. Silakan coba lagi.','error');
+  }finally{
+    if(btn){btn.innerHTML=original||'⬇ Download Massal';btn.disabled=state.selectedResults.size===0;}
+  }
+}
+async function downloadAllResultsRecap(){
+  const btn=document.getElementById('downloadResultsRecapBtn');
+  if(!state.results.length) return setBatchMessage('Belum ada hasil untuk direkap.','error');
+  const original=btn?.innerHTML;
+  try{
+    if(btn){btn.disabled=true;btn.innerHTML='Menyusun Rekap...';}
+    setBatchMessage(`Menyusun ${state.results.length} hasil menjadi satu PDF rekap. Bagian penjelasan asesmen tidak disertakan.`,'info');
+    const entries=[];
+    for(const result of state.results){ entries.push({result,participant:await resolveParticipant(result)}); }
+    await downloadResultsRecapPdf(entries,{filename:`rekap-semua-hasil-kompas-jurusan-${new Date().toISOString().slice(0,10)}.pdf`});
+    setBatchMessage('PDF rekap semua hasil berhasil dibuat.','success');
+  }catch(err){
+    console.error(err);setBatchMessage('PDF rekap belum dapat dibuat. Silakan coba lagi.','error');
+  }finally{ if(btn){btn.disabled=false;btn.innerHTML=original||'▤ Download Rekap Semua';} }
+}
+
 function renderResults(){
   const tbody=document.getElementById('resultsBody');
   if(!tbody) return;
-  if(!state.results.length){ tbody.innerHTML='<tr><td colspan="6"><div class="empty">Belum ada hasil asesmen.</div></td></tr>'; return; }
+  if(!state.results.length){
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty">Belum ada hasil asesmen.</div></td></tr>';
+    state.selectedResults.clear();updateResultSelectionUi();return;
+  }
   tbody.innerHTML=state.results.map(item=>{
     const p=participantForResult(item);
     const top=recommendationsForResult(item,1)[0];
     const fit=top ? getFitInterpretation(top.percent) : null;
+    const token=resultToken(item);
     return `<tr>
-      <td data-label="Peserta"><strong>${p.name||'-'}</strong><small>${p.email||''}</small></td>
-      <td data-label="Tanggal">${formatDateTime(item.createdAt)}</td>
-      <td data-label="RIASEC"><span class="badge info">${item.topRiasec?.map(x=>x.code).join('-')||'-'}</span></td>
-      <td data-label="Rumpun">${top?.cluster||'<span class="badge pending">Belum mencapai 60%</span>'}</td>
-      <td data-label="Kecocokan">${top ? `<strong>${top.percent||0}%</strong><small>${fit.label}</small>` : '<strong>—</strong><small>Perlu eksplorasi</small>'}</td>
-      <td data-label="PDF"><button class="btn btn-primary btn-sm" data-admin-pdf="${item.uid}|${item.id}">⬇ Unduh PDF</button></td>
+      <td class="check-col" data-label="Pilih"><label class="result-check"><input type="checkbox" data-result-select="${escapeHtml(token)}" ${state.selectedResults.has(token)?'checked':''}><span></span></label></td>
+      <td data-label="Peserta"><strong>${escapeHtml(p.name||'-')}</strong><small>${escapeHtml(p.email||'')}</small></td>
+      <td data-label="Tanggal">${escapeHtml(formatDateTime(item.createdAt))}</td>
+      <td data-label="RIASEC"><span class="badge info">${escapeHtml(item.topRiasec?.map(x=>x.code).join('-')||'-')}</span></td>
+      <td data-label="Rumpun">${top?escapeHtml(top.cluster):'<span class="badge pending">Belum mencapai 60%</span>'}</td>
+      <td data-label="Kecocokan">${top ? `<strong>${top.percent||0}%</strong><small>${escapeHtml(fit.label)}</small>` : '<strong>—</strong><small>Perlu eksplorasi</small>'}</td>
+      <td data-label="Aksi"><div class="result-row-actions"><button class="btn btn-secondary btn-sm" data-admin-view="${escapeHtml(token)}">Lihat Hasil</button><button class="btn btn-primary btn-sm" data-admin-pdf="${escapeHtml(token)}">⬇ PDF</button></div></td>
     </tr>`;
   }).join('');
+  tbody.querySelectorAll('[data-result-select]').forEach(cb=>cb.addEventListener('change',()=>{
+    const token=cb.dataset.resultSelect;
+    if(cb.checked) state.selectedResults.add(token); else state.selectedResults.delete(token);
+    updateResultSelectionUi();
+  }));
+  tbody.querySelectorAll('[data-admin-view]').forEach(btn=>btn.addEventListener('click',()=>{
+    const {uid,id}=parseResultToken(btn.dataset.adminView);openAdminResultByKey(uid,id);
+  }));
   bindAdminPdfButtons();
+  updateResultSelectionUi();
 }
 
 document.getElementById('settingsForm')?.addEventListener('submit', async e=>{
@@ -367,6 +513,24 @@ function renderSettings(){
   document.getElementById('settingAccountNumber').value = state.settings.accountNumber || '';
   document.getElementById('settingAccountName').value = state.settings.accountName || '';
 }
+
+
+document.getElementById('resultsSelectAll')?.addEventListener('change',e=>{
+  state.selectedResults.clear();
+  if(e.target.checked) state.results.forEach(item=>state.selectedResults.add(resultToken(item)));
+  renderResults();
+});
+document.getElementById('downloadSelectedResultsBtn')?.addEventListener('click',downloadSelectedResults);
+document.getElementById('downloadResultsRecapBtn')?.addEventListener('click',downloadAllResultsRecap);
+document.getElementById('closeAdminResultModal')?.addEventListener('click',()=>toggleModal(document.getElementById('adminResultModal'),false));
+document.getElementById('adminResultModal')?.addEventListener('click',e=>{if(e.target.id==='adminResultModal')toggleModal(document.getElementById('adminResultModal'),false);});
+document.getElementById('downloadResultFromModalBtn')?.addEventListener('click',async e=>{
+  if(!state.currentResult) return;
+  const btn=e.currentTarget;const original=btn.innerHTML;
+  try{btn.disabled=true;btn.innerHTML='Menyiapkan PDF...';const participant=await resolveParticipant(state.currentResult);await downloadAssessmentPdf(state.currentResult,participant);}
+  catch(err){console.error(err);alert('PDF belum dapat dibuat.');}
+  finally{btn.disabled=false;btn.innerHTML=original;}
+});
 
 function showPaymentsError(message){
   const el = document.getElementById('paymentsLoadError');

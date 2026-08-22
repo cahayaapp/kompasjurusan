@@ -1,5 +1,5 @@
-import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.3';
-import { buildTkaGuidance } from './tka-map.js?v=10.3';
+import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.6';
+import { buildTkaGuidance } from './tka-map.js?v=10.6';
 
 export const RECOMMENDATION_MIN_PERCENT = 60;
 

@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.3';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.3';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=10.3';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.6';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.6';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=10.6';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -516,6 +516,162 @@ function canvasesToPdf(canvases){
   xref+=`trailer\n<< /Size ${maxObj+1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
   parts.push(ascii(xref));
   return new Blob([concat(parts)],{type:'application/pdf'});
+}
+
+
+function drawRecapHeader(ctx, pageNo, totalPages, result, participant, logo){
+  const g=ctx.createLinearGradient(0,0,PAGE_W,0); g.addColorStop(0,C.navy); g.addColorStop(.6,'#0A5679'); g.addColorStop(1,C.cyan);
+  ctx.fillStyle=g; ctx.fillRect(0,0,PAGE_W,154);
+  if(logo) ctx.drawImage(logo,58,30,76,76);
+  font(ctx,31,800,C.white); ctx.fillText('KOMPAS JURUSAN',154,34);
+  font(ctx,17,700,'#A6ECF0'); ctx.fillText('REKAP HASIL ASESMEN',154,77);
+  font(ctx,15,500,'#D7F3F4'); ctx.fillText(`${participant?.name || result?.participant?.name || 'Peserta'} • ${formatDate(result?.createdAt)}`,154,108);
+  font(ctx,16,700,C.white); ctx.fillText(`${pageNo}/${totalPages}`,1088,48);
+}
+
+function drawRecapParticipant(ctx,result,participant,y){
+  const p={...(result?.participant||{}),...(participant||{})};
+  rr(ctx,60,y,1120,128,20,'#F5F9FD','#DFE8F2',1.5);
+  smallLabel(ctx,'Data Peserta',84,y+18,C.blue);
+  const left=`${p.name||'-'} • ${p.className||'-'} • ${p.gender||'-'}`;
+  const right=`${p.school||'-'} • ${p.email||'-'}`;
+  textBlock(ctx,left,84,y+50,1040,{size:20,weight:750,color:C.ink,lineHeight:1.25,maxLines:2});
+  textBlock(ctx,right,84,y+83,1040,{size:15,weight:520,color:C.muted,lineHeight:1.25,maxLines:2});
+  return y+148;
+}
+
+function drawRecapSummary(ctx,result,y){
+  const top=result?.topRiasec?.[0]||{};
+  const topRec=recommendationsForResult(result,1)[0]||null;
+  const boxes=[
+    ['RIASEC Dominan',`${top.label||'-'} (${top.code||'-'})`,top.description||'-'],
+    ['Rumpun Terkuat',topRec?.cluster||'Belum mencapai 60%',topRec?`${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}`:'Perlu eksplorasi lebih lanjut'],
+    ['Jurusan Prioritas',topRec?priorityMajorTextForPdf(topRec,2):'-','Jurusan umum + pilihan Ilmu Keislaman']
+  ];
+  boxes.forEach((b,i)=>{
+    const x=60+i*374;
+    rr(ctx,x,y,352,170,20,i===0?'#EEF5FF':i===1?'#ECFBF8':'#FFF8EA','#DCE7F4',1.5);
+    smallLabel(ctx,b[0],x+20,y+18,i===0?C.blue:i===1?C.teal:C.orange);
+    textBlock(ctx,b[1],x+20,y+50,312,{size:i===2?18:22,weight:800,color:C.navy,lineHeight:1.2,maxLines:i===2?4:3});
+    textBlock(ctx,b[2],x+20,y+125,312,{size:13,weight:520,color:C.muted,lineHeight:1.2,maxLines:2});
+  });
+  return y+192;
+}
+
+function drawRecapRiasec(ctx,result,y){
+  title(ctx,'Profil RIASEC',60,y,25); y+=38;
+  const data=result?.riasecChart||[];
+  data.forEach((item,i)=>{
+    const yy=y+i*42;
+    font(ctx,16,800,C.navy);ctx.fillText(item.code||'-',60,yy+4);
+    font(ctx,14,600,C.muted);ctx.fillText(item.label||'',92,yy+5);
+    rr(ctx,280,yy+8,730,13,7,'#E8EEF5');
+    rr(ctx,280,yy+8,730*Math.max(0,Math.min(100,Number(item.percent||0)))/100,13,7,i<2?C.blue:C.cyan);
+    font(ctx,16,800,C.navy);ctx.fillText(`${item.percent||0}%`,1035,yy+1);
+  });
+  return y+data.length*42+18;
+}
+
+function drawRecapRecommendations(ctx,result,y){
+  title(ctx,'Rekomendasi Studi',60,y,25); y+=42;
+  const recs=recommendationsForResult(result,3);
+  if(!recs.length){
+    rr(ctx,60,y,1120,80,16,'#FFF8EA','#F1D99C',1);
+    textBlock(ctx,`Belum ada rumpun yang mencapai batas rekomendasi ${RECOMMENDATION_MIN_PERCENT}%.`,82,y+24,1060,{size:17,weight:700,color:C.orange,lineHeight:1.3,maxLines:2});
+    return y+100;
+  }
+  const cols=[60,100,320,610,900,1180];
+  const widths=[40,220,290,290,280];
+  const heads=['#','Rumpun','Jurusan Umum','Ilmu Keislaman','TKA Pilihan'];
+  rr(ctx,60,y,1120,50,13,C.navy);
+  heads.forEach((h,i)=>textBlock(ctx,h,cols[i]+8,y+14,widths[i]-16,{size:13,weight:800,color:C.white,lineHeight:1.05,maxLines:2}));
+  y+=50;
+  recs.forEach((rec,idx)=>{
+    const g=buildTkaGuidance([rec]);
+    const umum=(rec.majors||[]).slice(0,4).join(', ')||'—';
+    const isl=(rec.islamicMajors||[]).slice(0,4).join(', ')||'—';
+    const tka=[...(g.priorityElectives||[]),...(g.islamicPriorityElectives||[])].filter((x,i,a)=>a.indexOf(x)===i).slice(0,4).join(', ')||'Sesuaikan prodi';
+    const h=96;
+    ctx.fillStyle=idx%2===0?'#F8FBFE':'#F2F7FB';ctx.fillRect(60,y,1120,h);
+    [100,320,610,900].forEach(x=>line(ctx,x,y,x,y+h,'#E3EBF4',1));
+    font(ctx,15,800,C.blue);ctx.fillText(String(idx+1),75,y+18);
+    textBlock(ctx,`${rec.cluster} (${rec.percent}%)`,110,y+14,200,{size:14,weight:800,color:C.navy,lineHeight:1.2,maxLines:3});
+    textBlock(ctx,umum,330,y+14,270,{size:13,weight:600,color:C.ink,lineHeight:1.25,maxLines:4});
+    textBlock(ctx,isl,620,y+14,270,{size:13,weight:650,color:isl==='—'?C.muted:C.teal,lineHeight:1.25,maxLines:4});
+    textBlock(ctx,tka,910,y+14,250,{size:13,weight:700,color:C.orange,lineHeight:1.25,maxLines:4});
+    y+=h;
+  });
+  return y+18;
+}
+
+function drawRecapDimensions(ctx,result,y){
+  title(ctx,'Dimensi Pendukung',60,y,25); y+=40;
+  const groups=[
+    ['Akademik',(result?.academic||[]).slice(0,3),labelAcademic,C.blue],
+    ['Gaya Kerja',(result?.workstyle||[]).slice(0,3),labelWorkstyle,C.teal],
+    ['Nilai Hidup',(result?.values||[]).slice(0,3),labelValue,C.orange]
+  ];
+  groups.forEach((g,gi)=>{
+    const x=60+gi*374;
+    rr(ctx,x,y,352,190,18,'#F8FBFE','#E1EAF4',1.2);
+    smallLabel(ctx,g[0],x+18,y+16,g[3]);
+    g[1].forEach((item,i)=>{
+      font(ctx,14,700,C.ink);ctx.fillText(g[2](item.code),x+18,y+50+i*42);
+      font(ctx,15,800,g[3]);ctx.fillText(`${item.percent||0}%`,x+282,y+49+i*42);
+    });
+  });
+  return y+210;
+}
+
+function jpgsToPdf(jpgs){
+  const objects=[];const kids=[];
+  objects[1]=ascii('<< /Type /Catalog /Pages 2 0 R >>');
+  jpgs.forEach((_,i)=>kids.push(`${3+i*3} 0 R`));
+  objects[2]=ascii(`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${jpgs.length} >>`);
+  jpgs.forEach((jpg,i)=>{
+    const pageObj=3+i*3,contentObj=pageObj+1,imageObj=pageObj+2;
+    objects[pageObj]=ascii(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_W} ${PDF_H}] /Resources << /XObject << /Im0 ${imageObj} 0 R >> >> /Contents ${contentObj} 0 R >>`);
+    const stream=`q\n${PDF_W} 0 0 ${PDF_H} 0 0 cm\n/Im0 Do\nQ\n`;
+    objects[contentObj]=ascii(`<< /Length ${stream.length} >>\nstream\n${stream}endstream`);
+    objects[imageObj]=concat([ascii(`<< /Type /XObject /Subtype /Image /Width ${PAGE_W} /Height ${PAGE_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`),jpg,ascii('\nendstream')]);
+  });
+  const header=ascii('%PDF-1.4\n%KJPDF\n');const parts=[header];const offsets=[0];let pos=header.length;const maxObj=objects.length-1;
+  for(let n=1;n<=maxObj;n++){offsets[n]=pos;const obj=concat([ascii(`${n} 0 obj\n`),objects[n],ascii('\nendobj\n')]);parts.push(obj);pos+=obj.length;}
+  const xrefPos=pos;let xref=`xref\n0 ${maxObj+1}\n0000000000 65535 f \n`;
+  for(let n=1;n<=maxObj;n++) xref+=`${String(offsets[n]).padStart(10,'0')} 00000 n \n`;
+  xref+=`trailer\n<< /Size ${maxObj+1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
+  parts.push(ascii(xref));return new Blob([concat(parts)],{type:'application/pdf'});
+}
+
+export async function buildResultsRecapPdfBlob(entries=[]){
+  const logo=await loadImage('assets/logo-icon.svg');
+  const totalPages=Math.max(1,entries.length);
+  const jpgs=[];
+  const source=entries.length?entries:[{result:{},participant:{}}];
+  for(let i=0;i<source.length;i++){
+    const entry=source[i]||{};const result=entry.result||entry;const participant=entry.participant||result?.participant||{};
+    const p=canvasPage();drawRecapHeader(p.ctx,i+1,totalPages,result,participant,logo);let y=180;
+    if(entries.length){
+      y=drawRecapParticipant(p.ctx,result,participant,y);y=drawRecapSummary(p.ctx,result,y);y=drawRecapRiasec(p.ctx,result,y);y=drawRecapRecommendations(p.ctx,result,y);if(y<1435)drawRecapDimensions(p.ctx,result,y);
+    }else{
+      title(p.ctx,'Belum ada hasil asesmen',60,230,34);textBlock(p.ctx,'Belum ada data hasil yang dapat dimasukkan ke dalam rekap.',60,290,1120,{size:20,color:C.muted,lineHeight:1.4});
+    }
+    drawFooter(p.ctx,i+1);
+    jpgs.push(base64ToBytes(p.canvas.toDataURL('image/jpeg',0.88)));
+    p.canvas.width=1;p.canvas.height=1;
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return jpgsToPdf(jpgs);
+}
+
+export async function downloadResultsRecapPdf(entries=[],options={}){
+  const blob=await buildResultsRecapPdfBlob(entries);
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=options.filename||`rekap-hasil-kompas-jurusan-${new Date().toISOString().slice(0,10)}.pdf`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 
 export async function buildAssessmentPdfBlob(result,participant={}){
