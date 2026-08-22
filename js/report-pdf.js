@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.6';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.6';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=10.6';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.7';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.7';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=10.7';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -369,24 +369,6 @@ function drawMandatoryTka(ctx,result,y){
     const x=88+i*335;rr(ctx,x,y+100,315,48,15,C.white,'#F0D99E',1.5);font(ctx,18,700,C.ink);ctx.fillText(s,x+18,y+114);
   });
   return y+198;
-}
-
-function drawTopClusterBreakdown(ctx,result,y){
-  const top=recommendationsForResult(result,1)[0];
-  if(!top) return y;
-  const g=buildTkaGuidance([top]);
-  title(ctx,`Rincian Jurusan Prioritas - ${top.cluster}`,60,y,30); y+=48;
-  textBlock(ctx,'Mapel berikut adalah fokus tambahan yang relevan untuk jurusan pada rumpun teratas. Gunakan sebagai arahan memilih paket bimbel TKA.',60,y,1120,{size:18,color:C.muted,lineHeight:1.4}); y+=66;
-  const rows=g.majorBreakdown||[];
-  rows.forEach((row,idx)=>{
-    const subjects=row.options?.length?row.options.join(', '):(row.customLabel||'Sesuaikan dengan prodi target');
-    const h=Math.max(60,wrap(ctx,subjects,500).length*23+28);
-    ctx.fillStyle=idx%2===0?'#F8FBFE':'#F2F7FB';ctx.fillRect(60,y,1120,h);
-    font(ctx,18,800,C.navy);ctx.fillText(row.major||'-',82,y+18);
-    textBlock(ctx,subjects,600,y+16,520,{size:17,weight:650,color:C.teal,lineHeight:1.35,maxLines:4});
-    y+=h;
-  });
-  return y+18;
 }
 
 function scorePill(ctx,label,pct,x,y,w,color){

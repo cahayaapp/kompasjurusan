@@ -174,7 +174,7 @@ export const TKA_MAJOR_MAP = {
     options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
     note: 'PGMI memerlukan penguatan Bahasa Arab untuk sumber keislaman dan Bahasa Indonesia Tingkat Lanjut untuk literasi akademik serta kompetensi kependidikan.'
   },
-  'PIAUD': {
+  'Pendidikan Islam Anak Usia Dini (PIAUD)': {
     options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
     note: 'PIAUD didukung Bahasa Arab sebagai penguatan sumber keislaman dan Bahasa Indonesia Tingkat Lanjut untuk kompetensi pendidikan anak usia dini.'
   },
@@ -199,6 +199,12 @@ export const TKA_MAJOR_MAP = {
     options: ['Pendidikan Pancasila/PPKn', 'Sosiologi', 'Sejarah'],
     note: 'Untuk Ilmu Hukum, PPKn, Sosiologi, dan Sejarah menjadi pilihan penguatan yang relevan untuk literasi hukum, kewargaan, dan konteks sosial.'
   },
+
+  'Ilmu Politik': {
+    options: ['Pendidikan Pancasila/PPKn', 'Sejarah', 'Sosiologi'],
+    note: 'Ilmu Politik didukung pemahaman kewargaan, sejarah, dan dinamika sosial-politik.'
+  },
+
   'Hukum Keluarga Islam (Ahwal Syakhshiyyah)': {
     options: ['Bahasa Arab', 'Pendidikan Pancasila/PPKn'],
     note: 'Bahasa Arab membantu kajian sumber hukum keluarga Islam, sedangkan PPKn memperkuat wawasan hukum dan kewargaan.'
@@ -218,6 +224,10 @@ export const TKA_MAJOR_MAP = {
   'Hukum Ekonomi Syariah': {
     options: ['Ekonomi', 'Bahasa Arab'],
     note: 'Hukum Ekonomi Syariah memerlukan penguatan Ekonomi sekaligus Bahasa Arab untuk memahami terminologi dan sumber-sumber syariah.'
+  },
+  'Hukum Ekonomi Syariah (Muamalah)': {
+    options: ['Ekonomi', 'Bahasa Arab'],
+    note: 'Hukum Ekonomi Syariah/Muamalah memerlukan penguatan Ekonomi sekaligus Bahasa Arab untuk memahami transaksi dan sumber-sumber syariah.'
   },
 
   'Hukum Pidana Islam (Jinayah)': {
@@ -266,6 +276,16 @@ export const TKA_MAJOR_MAP = {
     note: 'Perbankan Syariah membutuhkan penguatan Ekonomi dan kemampuan kuantitatif; Bahasa Arab dapat menjadi penguatan tambahan untuk terminologi syariah.'
   },
 
+
+
+  'Ilmu Tasawuf': {
+    options: ['Bahasa Arab', 'Sosiologi'],
+    note: 'Ilmu Tasawuf memerlukan Bahasa Arab untuk akses literatur klasik dan Sosiologi untuk membaca konteks manusia serta masyarakat.'
+  },
+  'Bimbingan Penyuluhan Islam': {
+    options: ['Sosiologi', 'Bahasa Arab'],
+    note: 'Bimbingan Penyuluhan Islam berkaitan dengan manusia, komunikasi pendampingan, masyarakat, dan literatur keislaman.'
+  },
 
   'Bimbingan dan Konseling Islam': {
     options: ['Sosiologi', 'Bahasa Arab'],

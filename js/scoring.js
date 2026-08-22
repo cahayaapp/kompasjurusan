@@ -1,5 +1,5 @@
-import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.6';
-import { buildTkaGuidance } from './tka-map.js?v=10.6';
+import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.7';
+import { buildTkaGuidance } from './tka-map.js?v=10.7';
 
 export const RECOMMENDATION_MIN_PERCENT = 60;
 
@@ -59,10 +59,12 @@ export function getFitInterpretation(percent){
 function enrichRecommendation(rec){
   const fit = getFitInterpretation(rec?.percent);
   const clusterDef = MAJOR_CLUSTERS.find(item => item.name === rec?.cluster);
-  const islamicMajors = Array.isArray(rec?.islamicMajors) && rec.islamicMajors.length
-    ? rec.islamicMajors
-    : (clusterDef?.islamicMajors || []);
-  return { ...rec, islamicMajors, fitLabel:fit.label, fitLevel:fit.level, fitKey:fit.key, fitDescription:fit.description };
+  // Selalu gunakan katalog jurusan TERBARU berdasarkan nama rumpun.
+  // Dengan begitu hasil tes lama ikut mendapatkan koreksi Jurusan Umum / Ilmu Keislaman
+  // tanpa peserta harus mengulang asesmen hanya karena katalog prodi diperbarui.
+  const majors = clusterDef?.majors || rec?.majors || [];
+  const islamicMajors = clusterDef?.islamicMajors || rec?.islamicMajors || [];
+  return { ...rec, majors, islamicMajors, fitLabel:fit.label, fitLevel:fit.level, fitKey:fit.key, fitDescription:fit.description };
 }
 
 export function islamicMajorsForRecommendation(rec={}){

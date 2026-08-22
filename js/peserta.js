@@ -1,9 +1,9 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
-import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=10.6';
-import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.6';
-import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=10.6';
-import { downloadAssessmentPdf } from './report-pdf.js?v=10.6';
-import { renderAssessmentInfoHtml } from './assessment-info.js?v=10.6';
+import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=10.7';
+import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.7';
+import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=10.7';
+import { downloadAssessmentPdf } from './report-pdf.js?v=10.7';
+import { renderAssessmentInfoHtml } from './assessment-info.js?v=10.7';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {

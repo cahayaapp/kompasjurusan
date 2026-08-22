@@ -258,7 +258,7 @@ export const MAJOR_CLUSTERS = [
   {
     name: 'Pendidikan & Humaniora',
     majors: ['Pendidikan', 'Bahasa', 'Sejarah', 'Sastra', 'Bimbingan Konseling'],
-    islamicMajors: ['Pendidikan Agama Islam (PAI)', 'Pendidikan Bahasa Arab', 'PGMI', 'PIAUD', 'Manajemen Pendidikan Islam', 'Bahasa dan Sastra Arab', "Ilmu Al-Qur'an dan Tafsir", 'Ilmu Hadis', 'Aqidah dan Filsafat Islam', 'Sejarah Peradaban Islam', 'Dirasat Islamiyah', 'Studi Agama-Agama'],
+    islamicMajors: ['Pendidikan Agama Islam (PAI)', 'Pendidikan Bahasa Arab', 'PGMI', 'Pendidikan Islam Anak Usia Dini (PIAUD)', 'Manajemen Pendidikan Islam', 'Bahasa dan Sastra Arab', "Ilmu Al-Qur'an dan Tafsir", 'Ilmu Hadis', 'Aqidah dan Filsafat Islam', 'Sejarah Peradaban Islam', 'Dirasat Islamiyah', 'Studi Agama-Agama'],
     weights: { S: .22, A: .08, I: .06, verbal: .18, communication: .13, mission: .11, growth: .07, collaboration: .07, sosial: .05, spirituality: .03 }
   },
   {
@@ -269,14 +269,14 @@ export const MAJOR_CLUSTERS = [
   },
   {
     name: 'Hukum & Kebijakan',
-    majors: ['Ilmu Hukum', 'Administrasi Publik'],
-    islamicMajors: ['Hukum Keluarga Islam (Ahwal Syakhshiyyah)', 'Hukum Ekonomi Syariah', 'Hukum Tata Negara (Siyasah)', 'Hukum Pidana Islam (Jinayah)', 'Perbandingan Mazhab'],
+    majors: ['Ilmu Hukum', 'Administrasi Publik', 'Ilmu Politik'],
+    islamicMajors: ['Hukum Keluarga Islam (Ahwal Syakhshiyyah)', 'Hukum Ekonomi Syariah (Muamalah)', 'Hukum Tata Negara (Siyasah)', 'Hukum Pidana Islam (Jinayah)', 'Perbandingan Mazhab'],
     weights: { E: .15, S: .12, I: .08, verbal: .17, logika: .13, sosial: .08, communication: .1, impact: .07, discipline: .06, leadership: .04 }
   },
   {
     name: 'Psikologi & Sosial',
     majors: ['Psikologi', 'Sosiologi', 'Ilmu Komunikasi', 'Pekerjaan Sosial', 'Hubungan Internasional'],
-    islamicMajors: ['Tasawuf dan Psikoterapi', 'Bimbingan dan Konseling Islam', 'Komunikasi dan Penyiaran Islam', 'Pengembangan Masyarakat Islam', 'Sosiologi Agama'],
+    islamicMajors: ['Tasawuf dan Psikoterapi', 'Ilmu Tasawuf', 'Bimbingan dan Konseling Islam', 'Bimbingan Penyuluhan Islam', 'Komunikasi dan Penyiaran Islam', 'Pengembangan Masyarakat Islam', 'Sosiologi Agama'],
     weights: { S: .2, I: .1, verbal: .12, sosial: .18, communication: .12, impact: .1, mission: .1, collaboration: .06, spirituality: .02 }
   },
   {
