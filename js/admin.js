@@ -1,15 +1,15 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=11.4';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.4';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.4';
+import { defaultPublicSettings } from './data.js?v=11.5';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.5';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.5';
 
 
 let pdfModulePromise = null;
 async function getPdfModule(){
   if(!pdfModulePromise){
-    pdfModulePromise=import('./report-pdf.js?v=11.4').catch(err=>{
+    pdfModulePromise=import('./report-pdf.js?v=11.5').catch(err=>{
       pdfModulePromise=null;
       console.error('Modul PDF gagal dimuat',err);
       throw err;
