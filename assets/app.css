@@ -398,3 +398,18 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 @media(max-width:760px){.result-view-modal{width:min(100%,100%)}.report-modal-actions{justify-content:stretch}.report-modal-actions .btn{width:100%}.report-surface-meta{grid-template-columns:1fr}.admin-result-person,.participant-report-grid{grid-template-columns:1fr}.study-matrix-row p,.admin-study-cols p{font-size:.76rem}.result-score-box b{font-size:1.1rem}}
 
 .islamic-line{display:inline-block;margin-top:8px;color:#0d8d96;font-weight:800}
+
+
+/* V11.0 — sidebar remains interactive while result/detail modals are open */
+@media (min-width:1181px){
+  .sidebar{z-index:130}
+  .modal{left:var(--sidebar);z-index:100}
+}
+@media (min-width:761px) and (max-width:1180px){
+  .sidebar{z-index:130}
+  .modal{left:220px;z-index:100}
+}
+@media (max-width:760px){
+  .modal{left:0}
+  .mobile-bottom-nav{z-index:130}
+}

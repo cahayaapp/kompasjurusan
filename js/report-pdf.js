@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.9';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.9';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=10.9';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.0';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.0';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=11.0';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;

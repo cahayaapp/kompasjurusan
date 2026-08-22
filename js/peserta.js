@@ -1,9 +1,9 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
-import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=10.9';
-import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.9';
-import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=10.9';
-import { downloadAssessmentPdf } from './report-pdf.js?v=10.9';
-import { renderAssessmentInfoHtml } from './assessment-info.js?v=10.9';
+import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=11.0';
+import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=11.0';
+import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=11.0';
+import { downloadAssessmentPdf } from './report-pdf.js?v=11.0';
+import { renderAssessmentInfoHtml } from './assessment-info.js?v=11.0';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
@@ -49,7 +49,12 @@ document.getElementById('startRetestBtn')?.addEventListener('click', ()=>{
   persistDraftSnapshot(state.draft);
 });
 
+function closeOpenModals(){
+  document.querySelectorAll('.modal.show').forEach(modal=>toggleModal(modal,false));
+}
+
 function activateSection(id){
+  closeOpenModals();
   sections.forEach(sec=>sec.classList.toggle('active', sec.id === id));
   navButtons.forEach(btn=>btn.classList.toggle('active', btn.dataset.sectionTarget === id));
   mobilePanel?.classList.remove('show');

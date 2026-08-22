@@ -1,10 +1,10 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=10.9';
-import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=10.9';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=10.9';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.9';
+import { defaultPublicSettings } from './data.js?v=11.0';
+import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=11.0';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=11.0';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=11.0';
 
 const state = {
   user: null,
@@ -29,7 +29,12 @@ document.querySelectorAll('[data-section-target]').forEach(btn=> btn.addEventLis
 document.getElementById('mobileMenuBtn')?.addEventListener('click', ()=> document.getElementById('mobilePanel')?.classList.add('show'));
 document.getElementById('closeMobilePanel')?.addEventListener('click', ()=> document.getElementById('mobilePanel')?.classList.remove('show'));
 
+function closeOpenModals(){
+  document.querySelectorAll('.modal.show').forEach(modal=>toggleModal(modal,false));
+}
+
 function activateSection(id){
+  closeOpenModals();
   document.querySelectorAll('.section').forEach(sec=> sec.classList.toggle('active', sec.id === id));
   document.querySelectorAll('[data-section-target]').forEach(btn=> btn.classList.toggle('active', btn.dataset.sectionTarget === id));
   document.getElementById('mobilePanel')?.classList.remove('show');

@@ -1,4 +1,4 @@
-import { RIASEC_INFO } from './data.js?v=10.9';
+import { RIASEC_INFO } from './data.js?v=11.0';
 
 export const ASSESSMENT_INFO = {
   title: 'Mengenal Asesmen Kompas Jurusan',
