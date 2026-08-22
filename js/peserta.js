@@ -1,9 +1,9 @@
 import { auth, dbRefs, get, set, update, push, ref, db } from './firebase.js';
-import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=10.7';
-import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.7';
-import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=10.7';
-import { downloadAssessmentPdf } from './report-pdf.js?v=10.7';
-import { renderAssessmentInfoHtml } from './assessment-info.js?v=10.7';
+import { QUESTIONS, QUESTION_SECTIONS, SCALE_LABELS, defaultPublicSettings } from './data.js?v=10.9';
+import { computeAssessmentResult, labelAcademic, labelValue, labelWorkstyle, getFitInterpretation, recommendationsForResult, alternativesForResult, relativeTopForResult, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.9';
+import { buildTkaGuidance, getMajorTkaInfo, TKA_REQUIRED } from './tka-map.js?v=10.9';
+import { downloadAssessmentPdf } from './report-pdf.js?v=10.9';
+import { renderAssessmentInfoHtml } from './assessment-info.js?v=10.9';
 import { guardPage, renderBrand, initials, bindLogout, rupiah, formatDateTime, setMessage, toggleModal, compressImage, listen } from './common.js';
 
 const state = {
@@ -416,6 +416,13 @@ function priorityMajorTextPlain(item, limit=4){
   return islam.length ? `${umumText} | Ilmu Keislaman: ${islam.join(', ')}` : umumText;
 }
 
+
+function reportIdForView(result){
+  const stamp = String(result?.createdAt || Date.now()).slice(-8);
+  const name = String(result?.participant?.name || state.profile?.name || 'PESERTA').replace(/[^A-Za-z0-9]/g,'').slice(0,5).toUpperCase();
+  return `KJ-${name || 'USER'}-${stamp}`;
+}
+
 function renderTkaGuidance(result, compact=false){
   const qualified = resultRecommendations(result);
   const guidance = buildTkaGuidance(qualified);
@@ -479,8 +486,8 @@ function renderResultCard(result, compact=false){
   <div class="card">
     <div class="panel-header"><div><h3>Hasil terbaru</h3><p>${result.summaryNarrative}</p></div><span class="badge approved">${formatDateTime(result.createdAt)}</span></div>
     <div class="result-hero">
-      <div class="result-score-box"><small>Tipe dominan</small><b>${top?.label || '-'} (${top?.code || '-'})</b><div style="color:#fff4cc;line-height:1.7">${top?.description || ''}</div></div>
-      <div class="result-score-box"><small>Rekomendasi utama</small><b>${topRec?.cluster || 'Belum mencapai 60%'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${priorityMajorTextHtml(topRec,4)}` : 'Gunakan arah relatif sebagai bahan eksplorasi awal.'}</div></div>
+      <div class="result-score-box"><small>Tipe dominan</small><b>${top?.label || '-'} (${top?.code || '-'})</b><p class="result-hero-desc">${top?.description || ''}</p></div>
+      <div class="result-score-box"><small>Rekomendasi utama</small><b>${topRec?.cluster || 'Belum mencapai 60%'}</b><div class="result-hero-copy">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${priorityMajorTextHtml(topRec,4)}` : 'Gunakan arah relatif sebagai bahan eksplorasi awal.'}</div></div>
     </div>
     <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     ${renderTkaGuidance(result, true)}
@@ -548,13 +555,33 @@ function showResult(result){
   const topRec = recs[0];
   const alternatives = resultAlternatives(result);
   document.getElementById('resultModalBody').innerHTML = `
-    <div class="report-modal-actions"><button class="btn btn-primary btn-sm" data-download-current>⬇ Unduh Laporan PDF</button></div>
-    ${renderParticipantReportData(result)}
-    <div class="result-hero">
-      <div class="result-score-box"><small>Profil RIASEC dominan</small><b>${result.topRiasec.map(x=>`${x.label} (${x.code})`).join(' • ')}</b><div style="color:#fff4cc;line-height:1.7">${result.topRiasec.map(x=>x.description).join(' ')}</div></div>
-      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${priorityMajorTextHtml(topRec,6)}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div></div>
-    </div>
-    <div class="card" style="padding:0;background:none;border:none;box-shadow:none">
+    <div class="result-modal-surface">
+      <div class="report-modal-actions"><button class="btn btn-primary btn-sm" data-download-current>⬇ Unduh Laporan PDF</button></div>
+      <div class="report-surface-header">
+        <div>
+          <div class="report-surface-kicker">Laporan Hasil Peserta</div>
+          <h2>Hasil ${state.profile?.name || result?.participant?.name || 'Peserta'}</h2>
+          <p>Laporan ini merangkum profil RIASEC, rekomendasi rumpun dan jurusan, jalur Ilmu Keislaman, serta fokus persiapan TKA dengan tampilan yang selaras dengan versi PDF resmi.</p>
+        </div>
+        <div class="report-surface-meta">
+          <div class="report-meta-chip"><small>Nomor Laporan</small><b>${reportIdForView(result)}</b></div>
+          <div class="report-meta-chip"><small>Tanggal Asesmen</small><b>${formatDateTime(result?.createdAt)}</b></div>
+        </div>
+      </div>
+      ${renderParticipantReportData(result)}
+      <div class="result-hero">
+        <div class="result-score-box">
+          <small>Profil RIASEC dominan</small>
+          <b>${result.topRiasec.map(x=>`${x.label} (${x.code})`).join(' • ')}</b>
+          <p class="result-hero-desc">${result.topRiasec.map(x=>x.description).join(' ')}</p>
+        </div>
+        <div class="result-score-box emphasis">
+          <small>Rumpun studi terkuat</small>
+          <b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b>
+          <div class="result-hero-copy">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${priorityMajorTextHtml(topRec,6)}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;background:none;border:none;box-shadow:none">
       <div class="panel-header"><div><h3>Skor RIASEC</h3></div></div>
       <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     </div>
@@ -570,7 +597,8 @@ function showResult(result){
       ${recs.length && alternatives.length ? `<div class="alternative-section"><div class="alternative-title"><b>Alternatif eksplorasi</b><small>Skor 50–59% tidak masuk rekomendasi utama.</small></div><div class="reco-list">${alternatives.map(item=>`<div class="reco-card alternative-card"><div class="reco-score-head"><b>${item.cluster} — ${item.percent}%</b>${fitBadge(item.percent)}</div><small>${(item.majors||[]).join(', ')}${(item.islamicMajors||[]).length ? `<br><b>Ilmu Keislaman:</b> ${(item.islamicMajors||[]).join(', ')}` : ''}</small></div>`).join('')}</div></div>` : ''}
       <div class="score-disclaimer">Persentase kecocokan menunjukkan tingkat keselarasan profil peserta dengan karakteristik rumpun studi. Angka ini bukan probabilitas keberhasilan kuliah dan bukan jaminan kecocokan mutlak.</div>
     </div>
-    ${renderResultNextSteps(result)}`;
+    ${renderResultNextSteps(result)}
+    </div>`;
   toggleModal(document.getElementById('resultModal'), true);
   bindResultPdfButtons(document.getElementById('resultModalBody'));
 }

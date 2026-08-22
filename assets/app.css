@@ -332,3 +332,69 @@ color:#fff;box-shadow:0 30px 86px rgba(12,72,190,.22)}
 #resultsBatchMessage .message{margin:0 0 14px}.results-table td[data-label="Peserta"] small{display:block;margin-top:4px;color:#8693a6;font-size:.64rem}
 @media(max-width:900px){.results-toolbar{align-items:flex-start;flex-direction:column}.results-toolbar-actions{justify-content:flex-start}.admin-result-person{grid-template-columns:1fr 1fr}.admin-study-cols{grid-template-columns:1fr}.admin-study-cols>div{border-right:0;border-bottom:1px solid #e9eff6}.admin-study-cols>div:last-child{border-bottom:0}}
 @media(max-width:760px){.results-toolbar-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.results-toolbar-actions .selection-counter{grid-column:1/-1}.results-toolbar-actions .btn{width:100%;white-space:normal}.check-col{width:auto!important}.result-row-actions{display:grid;grid-template-columns:1fr 1fr}.result-row-actions .btn{width:100%}.admin-result-person{grid-template-columns:1fr}.admin-study-title{align-items:flex-start;flex-direction:column}.modal-footer-actions .btn{width:100%}}
+
+
+/* V10.9 result view refinement */
+.result-view-modal{width:min(1160px,100%);max-width:1160px;background:linear-gradient(180deg,#ffffff,#f8fbff);border:1px solid #e7eef6;box-shadow:0 32px 90px rgba(20,39,76,.20)}
+.result-modal-surface,.admin-result-surface{display:grid;gap:18px}
+.report-modal-actions{display:flex;justify-content:flex-end;margin-bottom:-4px}
+.report-surface-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px;border-radius:22px;background:linear-gradient(135deg,#0b2f4a 0%,#0c5c88 54%,#18b8c4 100%);box-shadow:0 18px 40px rgba(13,56,97,.18)}
+.report-surface-kicker{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.14);color:#dcf7f9;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.report-surface-header h2{margin:14px 0 8px;color:#fff;font-size:1.65rem;line-height:1.15}
+.report-surface-header p{margin:0;color:#d9f4f7;font-size:.88rem;line-height:1.65;max-width:700px}
+.report-surface-meta{min-width:210px;display:grid;gap:10px}
+.report-meta-chip{padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16)}
+.report-meta-chip small{display:block;color:#cbeff2;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.report-meta-chip b{display:block;margin-top:4px;color:#fff;font-size:.95rem;line-height:1.35}
+.result-hero,.admin-result-hero{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+.result-score-box{border-radius:22px;padding:20px 20px 18px;background:linear-gradient(180deg,#ffffff,#f7fbff);border:1px solid #dfe8f4;box-shadow:0 12px 34px rgba(43,73,122,.08)}
+.result-score-box small{display:block;color:#7b8aa0;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.result-score-box b{display:block;margin:8px 0 10px;font-size:1.28rem;color:#16324a;line-height:1.28}
+.result-hero-copy,.result-hero-desc{margin:0;color:#5e6f86;font-size:.92rem;line-height:1.75}
+.result-hero-highlight{margin-top:10px;display:inline-flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;background:#edf7ff;color:#0a5884;font-size:.82rem;font-weight:700}
+.result-score-box.emphasis{background:linear-gradient(180deg,#fffaf0,#ffffff);border-color:#f1ddb0}
+.result-score-box.emphasis .result-hero-highlight{background:#fff5df;color:#9a6409}
+.participant-report-card,.admin-result-person{margin:0;background:linear-gradient(180deg,#ffffff,#fbfdff)}
+.participant-report-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}
+.participant-report-grid>div,.admin-result-person>div{padding:14px 16px;border-radius:16px;background:#f7faff;border:1px solid #e5edf6;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.participant-report-grid small,.admin-result-person small{display:block;color:#8392a7;font-size:.64rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.participant-report-grid b,.admin-result-person b{display:block;margin-top:6px;color:#203047;font-size:.86rem;line-height:1.5}
+.admin-result-person{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:0}
+.admin-result-section,.participant-report-card,.recommendation-policy-card,.result-next-steps{padding:18px;border-radius:22px;background:#fff;border:1px solid #e6edf5;box-shadow:0 10px 30px rgba(39,64,108,.05)}
+.recommendation-policy-card{background:linear-gradient(180deg,#ffffff,#fbfdff)}
+.panel-header h3{font-size:1.02rem}
+.panel-header p{color:#73829a}
+.threshold-chip{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;background:#eef6ff;color:#0f62ce;font-size:.72rem;font-weight:800}
+.study-matrix{border:1px solid #e4ebf4;border-radius:20px;overflow:hidden;background:#fff}
+.study-matrix-head{display:grid;grid-template-columns:1.05fr 1.2fr 1.2fr .9fr;background:#0b2f4a;color:#fff;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.study-matrix-head>div{padding:14px 16px;border-right:1px solid rgba(255,255,255,.08)}
+.study-matrix-head>div:last-child{border-right:0}
+.study-matrix-row{display:grid;grid-template-columns:1.05fr 1.2fr 1.2fr .9fr;border-top:1px solid #e7eef6;background:#fff}
+.study-matrix-row:nth-child(even){background:#fbfdff}
+.study-matrix-row>div{padding:16px;border-right:1px solid #ecf1f7}
+.study-matrix-row>div:last-child{border-right:0}
+.study-matrix-cluster{display:flex;flex-direction:column;gap:10px}
+.study-matrix-cluster b{font-size:.94rem;color:#1d314a}
+.study-matrix-row p{margin:0;color:#40526b;font-size:.8rem;line-height:1.65}
+.study-matrix-row .matrix-label{display:none}
+.matrix-score{display:inline-flex;align-items:center;justify-content:center;min-width:84px;padding:9px 14px;border-radius:999px;background:#eff7ff;color:#0f62ce;font-weight:800;font-size:.95rem;margin-bottom:10px}
+.study-matrix-row small{display:block;color:#55708d;font-size:.74rem;line-height:1.55}
+.study-matrix-row .islamic-tka{margin-top:8px;color:#0c9188;font-weight:700}
+.study-matrix-row .islamic-column{background:#f6fdfa}
+.result-next-steps .next-step-list{display:grid;gap:12px}
+.result-next-steps .next-step-list>div{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #edf2f7}
+.result-next-steps .next-step-list>div:last-child{border-bottom:0;padding-bottom:0}
+.result-next-steps .next-step-list span{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0f62ce,#1ab8c5);color:#fff;font-size:.85rem;font-weight:800}
+.result-next-steps .next-step-list p{margin:0;color:#4a5f7b;font-size:.87rem;line-height:1.72}
+.score-disclaimer{margin-top:16px;padding:12px 14px;border-radius:14px;background:#f7fafc;color:#728195;font-size:.76rem;line-height:1.65;border:1px dashed #dce6f0}
+.admin-study-title{padding:13px 16px;background:linear-gradient(90deg,#f3f8ff,#eefcfb)}
+.admin-study-title>b{font-size:.86rem}
+.admin-study-title strong{font-size:.98rem}
+.admin-study-cols>div{padding:14px 16px}
+.admin-study-cols small{font-size:.64rem}
+.admin-study-cols p{font-size:.77rem;line-height:1.68;color:#43556f}
+.admin-score-summary .card{padding:18px;border-radius:20px}
+@media(max-width:980px){.report-surface-header{grid-template-columns:1fr;display:grid}.report-surface-meta{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}.result-hero,.admin-result-hero,.participant-report-grid{grid-template-columns:1fr}.study-matrix-head,.study-matrix-row{grid-template-columns:1fr}.study-matrix-head{display:none}.study-matrix-row>div{border-right:0;border-bottom:1px solid #ecf1f7}.study-matrix-row>div:last-child{border-bottom:0}.study-matrix-row .matrix-label{display:block;margin-bottom:6px;font-size:.66rem;color:#7f8ea2;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.admin-result-person{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.result-view-modal{width:min(100%,100%)}.report-modal-actions{justify-content:stretch}.report-modal-actions .btn{width:100%}.report-surface-meta{grid-template-columns:1fr}.admin-result-person,.participant-report-grid{grid-template-columns:1fr}.study-matrix-row p,.admin-study-cols p{font-size:.76rem}.result-score-box b{font-size:1.1rem}}
+
+.islamic-line{display:inline-block;margin-top:8px;color:#0d8d96;font-weight:800}

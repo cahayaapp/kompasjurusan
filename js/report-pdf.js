@@ -1,6 +1,6 @@
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.7';
-import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.7';
-import { ASSESSMENT_INFO } from './assessment-info.js?v=10.7';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.9';
+import { labelAcademic, labelValue, labelWorkstyle, recommendationsForResult, alternativesForResult, relativeTopForResult, getFitInterpretation, RECOMMENDATION_MIN_PERCENT } from './scoring.js?v=10.9';
+import { ASSESSMENT_INFO } from './assessment-info.js?v=10.9';
 
 const PAGE_W = 1240;
 const PAGE_H = 1754;
@@ -132,19 +132,34 @@ function drawFooter(ctx, pageNo){
 
 function drawParticipantCard(ctx,result,participant,y){
   const p={...result?.participant,...participant};
-  rr(ctx,60,y,1120,206,24,C.pale,'#E1EAF4',2);
-  smallLabel(ctx,'Data Peserta',88,y+24,C.blue);
-  const fields=[
-    ['Nama Lengkap',p.name||'-'],['Email',p.email||'-'],
-    ['Kelas',p.className||'-'],['Asal Sekolah/Pesantren',p.school||'-'],
-    ['Jenis Kelamin',p.gender||'-'],['Tanggal Asesmen',formatTime(result?.createdAt)]
+  const leftFields=[
+    ['Nama Lengkap',p.name||'-'],['Email',p.email||'-'],['Kelas',p.className||'-']
   ];
-  fields.forEach((f,i)=>{
-    const col=i%2,row=Math.floor(i/2); const x=88+col*548, yy=y+60+row*44;
-    font(ctx,15,700,C.muted); ctx.fillText(f[0],x,yy);
-    font(ctx,20,700,C.ink); ctx.fillText(String(f[1]),x+170,yy-2);
-  });
-  return y+230;
+  const rightFields=[
+    ['Asal Sekolah/Pesantren',p.school||'-'],['Jenis Kelamin',p.gender||'-'],['Tanggal Asesmen',formatTime(result?.createdAt)]
+  ];
+  const calcHeight=(fields,width)=>{
+    font(ctx,19,700,C.ink);
+    let total=0;
+    fields.forEach(([,val])=>{ total += Math.max(1, wrap(ctx,String(val), width).length) * 28 + 28; });
+    return total;
+  };
+  const leftHeight=calcHeight(leftFields,300);
+  const rightHeight=calcHeight(rightFields,300);
+  const cardH=Math.max(214, Math.max(leftHeight,rightHeight)+74);
+  rr(ctx,60,y,1120,cardH,24,C.pale,'#E1EAF4',2);
+  smallLabel(ctx,'Data Peserta',88,y+24,C.blue);
+  const drawCol=(fields,x,width)=>{
+    let yy=y+58;
+    fields.forEach(([label,val])=>{
+      font(ctx,15,800,C.muted); ctx.fillText(label,x,yy);
+      yy=textBlock(ctx,String(val),x,yy+20,width,{size:19,weight:700,color:C.ink,lineHeight:1.28,maxLines:3});
+      yy+=12;
+    });
+  };
+  drawCol(leftFields,88,390);
+  drawCol(rightFields,636,390);
+  return y+cardH+20;
 }
 
 function priorityMajorTextForPdf(item, limit=3){
@@ -160,17 +175,28 @@ function drawSummary(ctx,result,y){
   title(ctx,'Ringkasan Utama',60,y,32); y+=50;
   const top=result?.topRiasec?.[0]||{}; const topRec=recommendationsForResult(result,1)[0]||null; const relativeTop=relativeTopForResult(result,1)[0]||null;
   const cards=[
-    {label:'Profil RIASEC Dominan',value:`${top.label||'-'} (${top.code||'-'})`,note:top.description||'Kecenderungan minat utama.', valueSize:27, valueLines:3},
-    {label:'Rumpun Studi Terkuat',value:topRec ? `${topRec.cluster}` : 'Belum mencapai batas 60%',note:topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}` : `Arah relatif tertinggi: ${relativeTop?.cluster||'-'} (${relativeTop?.percent||0}%).`, valueSize:27, valueLines:3},
-    {label:'Jurusan Prioritas',value:topRec ? priorityMajorTextForPdf(topRec,3) : '-',note:topRec ? 'Jurusan umum dan jalur keislaman yang paling layak dieksplorasi lebih lanjut.' : 'Belum ditetapkan sebagai rekomendasi utama.', valueSize:20, valueLines:5}
+    {label:'Profil RIASEC Dominan',value:`${top.label||'-'} (${top.code||'-'})`,note:top.description||'Kecenderungan minat utama.', valueSize:26, noteSize:15, accent:C.blue, fill:'#EEF5FF'},
+    {label:'Rumpun Studi Terkuat',value:topRec ? `${topRec.cluster}` : 'Belum mencapai batas 60%',note:topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}` : `Arah relatif tertinggi: ${relativeTop?.cluster||'-'} (${relativeTop?.percent||0}%).`, valueSize:25, noteSize:15, accent:C.teal, fill:'#EAFBFA'},
+    {label:'Jurusan Prioritas',value:topRec ? priorityMajorTextForPdf(topRec,3) : '-',note:topRec ? 'Jurusan umum dan jalur keislaman yang paling layak dieksplorasi lebih lanjut.' : 'Belum ditetapkan sebagai rekomendasi utama.', valueSize:18, noteSize:14, accent:C.orange, fill:'#FFF7E6'}
   ];
-  cards.forEach((c,i)=>{
-    const x=60+i*374; rr(ctx,x,y,352,212,22,i===0?'#EEF5FF':i===1?'#EAFBFA':'#FFF7E6','#DCE7F4',2);
-    smallLabel(ctx,c.label,x+24,y+22,i===0?C.blue:i===1?C.teal:C.orange);
-    textBlock(ctx,c.value,x+24,y+58,304,{size:c.valueSize||27,weight:800,color:C.navy,lineHeight:1.22,maxLines:c.valueLines||3});
-    textBlock(ctx,c.note,x+24,y+146,304,{size:16,weight:500,color:C.muted,lineHeight:1.35,maxLines:3});
+  const cardHeights=[];
+  cards.forEach(c=>{
+    const valueWidth=304;
+    font(ctx,c.valueSize,800,C.navy);
+    const valueLines=String(c.value).split('
+').reduce((n,part)=>n+wrap(ctx,part,valueWidth).length,0);
+    font(ctx,c.noteSize,500,C.muted);
+    const noteLines=wrap(ctx,c.note,304).length;
+    cardHeights.push(Math.max(214, 86 + valueLines*(c.valueSize*1.22) + 14 + noteLines*(c.noteSize*1.35) + 18));
   });
-  return y+242;
+  const maxH=Math.max(...cardHeights);
+  cards.forEach((c,i)=>{
+    const x=60+i*374; rr(ctx,x,y,352,maxH,22,c.fill,'#DCE7F4',2);
+    smallLabel(ctx,c.label,x+24,y+22,c.accent);
+    const valueEnd=textBlock(ctx,c.value,x+24,y+56,304,{size:c.valueSize,weight:800,color:C.navy,lineHeight:1.22,maxLines:7});
+    textBlock(ctx,c.note,x+24,Math.min(valueEnd+12, y+maxH-70),304,{size:c.noteSize,weight:550,color:C.muted,lineHeight:1.35,maxLines:4});
+  });
+  return y+maxH+24;
 }
 
 function drawRiasec(ctx,result,y){
@@ -194,8 +220,8 @@ function drawRiasec(ctx,result,y){
 function drawInterpretation(ctx,result,y){
   rr(ctx,60,y,1120,250,24,'#F8FBFE','#DDE8F3',2);
   smallLabel(ctx,'Interpretasi Ringkas',88,y+24,C.blue);
-  textBlock(ctx,result?.summaryNarrative||'Hasil asesmen menunjukkan kombinasi minat, gaya kerja, nilai hidup, dan kekuatan akademik yang dapat digunakan sebagai bahan eksplorasi arah studi.',88,y+60,1064,{size:21,weight:500,color:C.ink,lineHeight:1.45,maxLines:6});
-  textBlock(ctx,`Catatan: skor kecocokan menunjukkan tingkat keselarasan profil dengan karakteristik rumpun studi, bukan probabilitas keberhasilan kuliah. Rekomendasi utama ditampilkan mulai ${RECOMMENDATION_MIN_PERCENT}%.`,88,y+195,1040,{size:15,weight:600,color:C.muted,lineHeight:1.25,maxLines:2});
+  const endY=textBlock(ctx,result?.summaryNarrative||'Hasil asesmen menunjukkan kombinasi minat, gaya kerja, nilai hidup, dan kekuatan akademik yang dapat digunakan sebagai bahan eksplorasi arah studi.',88,y+60,1064,{size:19,weight:520,color:C.ink,lineHeight:1.42,maxLines:7});
+  textBlock(ctx,`Catatan: skor kecocokan menunjukkan tingkat keselarasan profil dengan karakteristik rumpun studi, bukan probabilitas keberhasilan kuliah. Rekomendasi utama ditampilkan mulai ${RECOMMENDATION_MIN_PERCENT}%.`,88,Math.min(endY+18,y+198),1040,{size:14,weight:650,color:C.muted,lineHeight:1.25,maxLines:3});
 }
 
 function drawSectionBand(ctx,text,y,subtitle=''){
@@ -281,14 +307,11 @@ function drawReadingGuide(ctx,y){
 
 function drawStudyTable(ctx,result,y){
   const recs=recommendationsForResult(result,5);
-  // # | Rumpun | Jurusan Umum | Ilmu Keislaman | TKA
   const cols=[60,112,322,617,912,1180];
   const widths=[52,210,295,295,268];
   const headers=['#','Rumpun Studi','Jurusan Umum','Ilmu Keislaman','Mapel Pilihan TKA'];
   rr(ctx,60,y,1120,72,16,C.navy);
-  headers.forEach((h,i)=>{
-    textBlock(ctx,h,cols[i]+10,y+17,widths[i]-20,{size:14,weight:800,color:C.white,lineHeight:1.15,maxLines:3});
-  });
+  headers.forEach((h,i)=>{ textBlock(ctx,h,cols[i]+10,y+17,widths[i]-20,{size:14,weight:800,color:C.white,lineHeight:1.15,maxLines:3}); });
   y+=72;
   if(!recs.length){
     ctx.fillStyle='#F8FBFE';ctx.fillRect(60,y,1120,118);
@@ -302,47 +325,45 @@ function drawStudyTable(ctx,result,y){
     const islamTka=(guidance.islamicPriorityElectives||[]);
     const majors=(rec.majors||[]).join(', ') || '—';
     const islamicMajors=(rec.islamicMajors||[]).join(', ') || '—';
-    const tkaText = (rec.islamicMajors||[]).length
-      ? `Umum: ${umumTka.join(', ') || 'sesuaikan prodi'}\nKeislaman: ${islamTka.join(', ') || 'sesuaikan prodi'}`
-      : `${umumTka.join(', ') || 'Sesuaikan prodi spesifik'}`;
+    const umumTkaText=umumTka.join(', ') || 'Sesuaikan prodi spesifik';
+    const islamTkaText=islamTka.join(', ') || 'Sesuaikan prodi keislaman';
 
-    font(ctx,15,600,C.ink);
-    const lineCounts=[
-      wrap(ctx,rec.cluster||'-',widths[1]-20).length,
-      wrap(ctx,majors,widths[2]-20).length,
-      wrap(ctx,islamicMajors,widths[3]-20).length,
-      ...String(tkaText).split('\n').map(part=>wrap(ctx,part,widths[4]-20).length)
-    ];
-    const h=Math.max(112,Math.max(...lineCounts)*22+48);
+    font(ctx,14,700,C.ink);
+    const clusterLines = wrap(ctx,rec.cluster||'-',widths[1]-24).length + 1;
+    const majorsLines = wrap(ctx,majors,widths[2]-24).length;
+    const islamLines = wrap(ctx,islamicMajors,widths[3]-24).length;
+    const tkaLines = (rec.islamicMajors||[]).length
+      ? 1 + wrap(ctx,umumTkaText,widths[4]-24).length + 1 + wrap(ctx,islamTkaText,widths[4]-24).length
+      : wrap(ctx,umumTkaText,widths[4]-24).length;
+    const contentLines=Math.max(clusterLines, majorsLines, islamLines, tkaLines);
+    const h=Math.max(132, contentLines*20 + 54);
     ctx.fillStyle=idx%2===0?'#F8FBFE':'#F1F6FB';ctx.fillRect(60,y,1120,h);
     line(ctx,60,y+h,1180,y+h,'#DCE6F1',1);
-    // vertical guides
     [112,322,617,912].forEach(x=>line(ctx,x,y,x,y+h,'#E3EBF4',1));
 
     font(ctx,18,800,C.blue);ctx.fillText(String(idx+1),78,y+22);
-    textBlock(ctx,rec.cluster||'-',124,y+18,widths[1]-24,{size:17,weight:800,color:C.navy,lineHeight:1.25,maxLines:4});
+    textBlock(ctx,rec.cluster||'-',124,y+18,widths[1]-24,{size:16,weight:800,color:C.navy,lineHeight:1.23,maxLines:6});
     const fit=getFitInterpretation(rec.percent);
-    textBlock(ctx,`${rec.percent||0}% • ${fit.label}`,124,y+h-35,widths[1]-24,{size:13,weight:700,color:C.green,lineHeight:1.1,maxLines:1});
+    textBlock(ctx,`${rec.percent||0}% • ${fit.label}`,124,y+h-34,widths[1]-24,{size:12.5,weight:800,color:C.green,lineHeight:1.1,maxLines:1});
 
-    textBlock(ctx,majors,334,y+18,widths[2]-24,{size:15,weight:600,color:C.ink,lineHeight:1.32,maxLines:7});
-    textBlock(ctx,islamicMajors,629,y+18,widths[3]-24,{size:15,weight:650,color:(rec.islamicMajors||[]).length?C.teal:C.muted,lineHeight:1.32,maxLines:7});
+    textBlock(ctx,majors,334,y+18,widths[2]-24,{size:14,weight:650,color:C.ink,lineHeight:1.3,maxLines:12});
+    textBlock(ctx,islamicMajors,629,y+18,widths[3]-24,{size:14,weight:700,color:(rec.islamicMajors||[]).length?C.teal:C.muted,lineHeight:1.3,maxLines:12});
 
     let ty=y+18;
     if((rec.islamicMajors||[]).length){
-      font(ctx,13,800,C.muted);ctx.fillText('UMUM',924,ty);ty+=20;
-      ty=textBlock(ctx,umumTka.join(', ')||'Sesuaikan prodi',924,ty,widths[4]-24,{size:14,weight:700,color:C.teal,lineHeight:1.28,maxLines:4});
-      ty+=8;
-      font(ctx,13,800,C.muted);ctx.fillText('KEISLAMAN',924,ty);ty+=20;
-      textBlock(ctx,islamTka.join(', ')||'Sesuaikan prodi',924,ty,widths[4]-24,{size:14,weight:700,color:C.orange,lineHeight:1.28,maxLines:4});
+      font(ctx,12.5,800,C.muted);ctx.fillText('UMUM',924,ty);ty+=18;
+      ty=textBlock(ctx,umumTkaText,924,ty,widths[4]-24,{size:13.5,weight:700,color:C.teal,lineHeight:1.26,maxLines:6});
+      ty+=7;
+      font(ctx,12.5,800,C.muted);ctx.fillText('KEISLAMAN',924,ty);ty+=18;
+      textBlock(ctx,islamTkaText,924,ty,widths[4]-24,{size:13.5,weight:700,color:C.orange,lineHeight:1.26,maxLines:6});
     }else{
-      textBlock(ctx,umumTka.join(', ')||'Sesuaikan prodi spesifik',924,ty,widths[4]-24,{size:14,weight:700,color:C.teal,lineHeight:1.3,maxLines:6});
+      textBlock(ctx,umumTkaText,924,ty,widths[4]-24,{size:13.5,weight:700,color:C.teal,lineHeight:1.28,maxLines:8});
     }
     y+=h;
   });
   line(ctx,60,y,1180,y,'#C8D7E8',2);
   return y+18;
 }
-
 
 function drawAlternativeStudy(ctx,result,y){
   const alternatives=alternativesForResult(result,3);

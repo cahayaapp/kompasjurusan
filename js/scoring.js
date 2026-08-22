@@ -1,5 +1,5 @@
-import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.7';
-import { buildTkaGuidance } from './tka-map.js?v=10.7';
+import { QUESTIONS, RIASEC_INFO, MAJOR_CLUSTERS } from './data.js?v=10.9';
+import { buildTkaGuidance } from './tka-map.js?v=10.9';
 
 export const RECOMMENDATION_MIN_PERCENT = 60;
 
@@ -56,15 +56,44 @@ export function getFitInterpretation(percent){
   };
 }
 
+const CLUSTER_ALIASES = {
+  // Nama rumpun pada hasil tes versi lama -> nama katalog terkini.
+  'Bisnis & Manajemen': 'Bisnis, Ekonomi & Manajemen',
+  'Bisnis Ekonomi & Manajemen': 'Bisnis, Ekonomi & Manajemen',
+  'Ekonomi & Bisnis': 'Bisnis, Ekonomi & Manajemen',
+  'Ekonomi Bisnis': 'Bisnis, Ekonomi & Manajemen',
+  'Hukum & Ilmu Sosial': 'Hukum & Kebijakan',
+  'Hukum dan Kebijakan': 'Hukum & Kebijakan',
+  'Pendidikan dan Humaniora': 'Pendidikan & Humaniora',
+  'Psikologi dan Sosial': 'Psikologi & Sosial',
+  'Sains dan Teknologi': 'Sains & Teknologi',
+  'Seni dan Industri Kreatif': 'Seni & Industri Kreatif'
+};
+
+function normalizedClusterName(name=''){
+  const raw=String(name||'').trim();
+  if(!raw) return raw;
+  if(CLUSTER_ALIASES[raw]) return CLUSTER_ALIASES[raw];
+  const direct=MAJOR_CLUSTERS.find(item=>item.name.toLowerCase()===raw.toLowerCase());
+  if(direct) return direct.name;
+  const aliasKey=Object.keys(CLUSTER_ALIASES).find(key=>key.toLowerCase()===raw.toLowerCase());
+  return aliasKey ? CLUSTER_ALIASES[aliasKey] : raw;
+}
+
+export function canonicalClusterName(name=''){
+  return normalizedClusterName(name);
+}
+
 function enrichRecommendation(rec){
   const fit = getFitInterpretation(rec?.percent);
-  const clusterDef = MAJOR_CLUSTERS.find(item => item.name === rec?.cluster);
-  // Selalu gunakan katalog jurusan TERBARU berdasarkan nama rumpun.
-  // Dengan begitu hasil tes lama ikut mendapatkan koreksi Jurusan Umum / Ilmu Keislaman
-  // tanpa peserta harus mengulang asesmen hanya karena katalog prodi diperbarui.
+  const canonicalCluster = normalizedClusterName(rec?.cluster);
+  const clusterDef = MAJOR_CLUSTERS.find(item => item.name === canonicalCluster);
+  // Selalu gunakan katalog jurusan TERBARU berdasarkan rumpun yang telah dinormalisasi.
+  // Ini membuat hasil tes lama (mis. "Bisnis & Manajemen") otomatis memakai katalog
+  // "Bisnis, Ekonomi & Manajemen", termasuk kolom Ilmu Keislamannya.
   const majors = clusterDef?.majors || rec?.majors || [];
   const islamicMajors = clusterDef?.islamicMajors || rec?.islamicMajors || [];
-  return { ...rec, majors, islamicMajors, fitLabel:fit.label, fitLevel:fit.level, fitKey:fit.key, fitDescription:fit.description };
+  return { ...rec, cluster: clusterDef?.name || canonicalCluster || rec?.cluster, majors, islamicMajors, fitLabel:fit.label, fitLevel:fit.level, fitKey:fit.key, fitDescription:fit.description };
 }
 
 export function islamicMajorsForRecommendation(rec={}){

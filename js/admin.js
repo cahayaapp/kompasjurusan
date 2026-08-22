@@ -1,10 +1,10 @@
 import { db, ref, onValue, get, update, set } from './firebase.js';
 import { dbRefs } from './firebase.js';
 import { guardPage, renderBrand, bindLogout, initials, rupiah, formatDateTime, setMessage, toggleModal } from './common.js';
-import { defaultPublicSettings } from './data.js?v=10.7';
-import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=10.7';
-import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=10.7';
-import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.7';
+import { defaultPublicSettings } from './data.js?v=10.9';
+import { downloadAssessmentPdf, downloadResultsRecapPdf } from './report-pdf.js?v=10.9';
+import { recommendationsForResult, getFitInterpretation, labelAcademic, labelValue, labelWorkstyle } from './scoring.js?v=10.9';
+import { buildTkaGuidance, TKA_REQUIRED } from './tka-map.js?v=10.9';
 
 const state = {
   user: null,
@@ -260,6 +260,13 @@ function renderParticipants(){
   bindAdminPdfButtons();
 }
 
+
+function adminReportId(result, participant){
+  const stamp = String(result?.createdAt || Date.now()).slice(-8);
+  const name = String(participant?.name || result?.participant?.name || 'PESERTA').replace(/[^A-Za-z0-9]/g,'').slice(0,5).toUpperCase();
+  return `KJ-${name || 'USER'}-${stamp}`;
+}
+
 function participantForResult(result){
   const p = state.participants.find(x=>x.uid===result?.uid) || {};
   return { ...(result?.participant || {}), ...p, uid:result?.uid || p.uid || '' };
@@ -385,16 +392,28 @@ function openAdminResult(result){
   const titleEl=document.getElementById('adminResultModalTitle');
   if(titleEl) titleEl.textContent=`Hasil ${p.name||'Peserta'}`;
   if(body) body.innerHTML=`
-    <div class="admin-result-person">
-      <div><small>Nama Peserta</small><b>${escapeHtml(p.name||'-')}</b></div>
-      <div><small>Kelas</small><b>${escapeHtml(p.className||'-')}</b></div>
-      <div><small>Sekolah/Pesantren</small><b>${escapeHtml(p.school||'-')}</b></div>
-      <div><small>Tanggal Tes</small><b>${escapeHtml(formatDateTime(result.createdAt))}</b></div>
-    </div>
-    <div class="result-hero admin-result-hero">
-      <div class="result-score-box"><small>Profil RIASEC Dominan</small><b>${escapeHtml(`${riasec.label||'-'} (${riasec.code||'-'})`)}</b><div style="color:#fff4cc;line-height:1.6">${escapeHtml(riasec.description||'')}</div></div>
-      <div class="result-score-box"><small>Rumpun Studi Terkuat</small><b>${escapeHtml(top?.cluster||'Belum mencapai 60%')}</b><div style="color:#fff4cc;line-height:1.6">${top?`${top.percent}% • ${escapeHtml(getFitInterpretation(top.percent).label)}<br>${escapeHtml((top.majors||[]).slice(0,4).join(', '))}${(top.islamicMajors||[]).length?`<br><span style="color:#b9f5e8">Ilmu Keislaman: ${escapeHtml((top.islamicMajors||[]).slice(0,4).join(', '))}</span>`:''}`:'Gunakan sebagai bahan eksplorasi lebih lanjut.'}</div></div>
-    </div>
+    <div class="admin-result-surface">
+      <div class="report-surface-header">
+        <div>
+          <div class="report-surface-kicker">Hasil Asesmen</div>
+          <h2>${escapeHtml(p.name||'Peserta')}</h2>
+          <p>Tampilan detail hasil peserta diselaraskan dengan struktur laporan PDF resmi agar lebih rapi, mudah dibaca, dan nyaman digunakan saat review oleh admin.</p>
+        </div>
+        <div class="report-surface-meta">
+          <div class="report-meta-chip"><small>Nomor Laporan</small><b>${adminReportId(result,p)}</b></div>
+          <div class="report-meta-chip"><small>Tanggal Asesmen</small><b>${escapeHtml(formatDateTime(result.createdAt))}</b></div>
+        </div>
+      </div>
+      <div class="admin-result-person">
+        <div><small>Nama Peserta</small><b>${escapeHtml(p.name||'-')}</b></div>
+        <div><small>Kelas</small><b>${escapeHtml(p.className||'-')}</b></div>
+        <div><small>Sekolah/Pesantren</small><b>${escapeHtml(p.school||'-')}</b></div>
+        <div><small>Tanggal Tes</small><b>${escapeHtml(formatDateTime(result.createdAt))}</b></div>
+      </div>
+      <div class="result-hero admin-result-hero">
+        <div class="result-score-box"><small>Profil RIASEC Dominan</small><b>${escapeHtml(`${riasec.label||'-'} (${riasec.code||'-'})`)}</b><p class="result-hero-desc">${escapeHtml(riasec.description||'')}</p></div>
+        <div class="result-score-box emphasis"><small>Rumpun Studi Terkuat</small><b>${escapeHtml(top?.cluster||'Belum mencapai 60%')}</b><div class="result-hero-copy">${top?`${top.percent}% • ${escapeHtml(getFitInterpretation(top.percent).label)}<br>${escapeHtml((top.majors||[]).slice(0,4).join(', '))}${(top.islamicMajors||[]).length?`<br><span class="islamic-line">Ilmu Keislaman: ${escapeHtml((top.islamicMajors||[]).slice(0,4).join(', '))}</span>`:''}`:'Gunakan sebagai bahan eksplorasi lebih lanjut.'}</div></div>
+      </div>
     <div class="admin-result-section"><div class="panel-header"><div><h3>Profil RIASEC</h3><p>Distribusi kecenderungan minat peserta.</p></div></div><div class="bars">${(result.riasecChart||[]).map(item=>`<div class="bar-item"><label>${escapeHtml(item.code||'-')}</label><div class="bar-shell"><span style="width:${Math.max(0,Math.min(100,Number(item.percent||0)))}%"></span></div><strong>${item.percent||0}%</strong></div>`).join('')}</div></div>
     <div class="admin-result-section"><div class="panel-header"><div><h3>Rekomendasi Rumpun & Jurusan</h3><p>Jurusan umum, Ilmu Keislaman, dan fokus mapel TKA berada dalam rumpun yang sama.</p></div></div>${renderAdminStudyRows(result)}</div>
     <div class="grid-3 admin-score-summary">
@@ -402,7 +421,8 @@ function openAdminResult(result){
       <div class="card"><h3>Gaya Kerja</h3>${(result.workstyle||[]).slice(0,4).map(x=>`<div class="admin-mini-score"><span>${escapeHtml(labelWorkstyle(x.code))}</span><b>${x.percent||0}%</b></div>`).join('')}</div>
       <div class="card"><h3>Nilai Hidup</h3>${(result.values||[]).slice(0,4).map(x=>`<div class="admin-mini-score"><span>${escapeHtml(labelValue(x.code))}</span><b>${x.percent||0}%</b></div>`).join('')}</div>
     </div>
-    <div class="score-disclaimer">Persentase kecocokan menunjukkan tingkat keselarasan profil peserta dengan karakteristik rumpun studi, bukan peluang keberhasilan kuliah.</div>`;
+    <div class="score-disclaimer">Persentase kecocokan menunjukkan tingkat keselarasan profil peserta dengan karakteristik rumpun studi, bukan peluang keberhasilan kuliah.</div>
+    </div>`;
   toggleModal(modal,true);
 }
 async function openAdminResultByKey(uid,id){

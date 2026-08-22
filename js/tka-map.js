@@ -332,6 +332,7 @@ const clusterFallbacks = {
   'Kesehatan': ['Biologi', 'Kimia'],
   'Pendidikan & Humaniora': ['Bahasa Indonesia Tingkat Lanjut', 'Bahasa Inggris Tingkat Lanjut'],
   'Bisnis, Ekonomi & Manajemen': ['Ekonomi', 'Produk/Projek Kreatif dan Kewirausahaan'],
+  'Bisnis & Manajemen': ['Ekonomi', 'Produk/Projek Kreatif dan Kewirausahaan'],
   'Hukum & Kebijakan': ['Pendidikan Pancasila/PPKn', 'Sosiologi'],
   'Psikologi & Sosial': ['Sosiologi', 'Bahasa Inggris Tingkat Lanjut'],
   'Seni & Industri Kreatif': ['Fisika']
