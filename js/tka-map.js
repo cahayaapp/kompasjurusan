@@ -118,6 +118,28 @@ export const TKA_MAJOR_MAP = {
     note: 'Administrasi bisnis/niaga beririsan kuat dengan Ekonomi; PPKn juga dapat relevan pada jalur administrasi tertentu.'
   },
 
+
+  'Akuntansi Syariah': {
+    options: ['Matematika Tingkat Lanjut', 'Ekonomi'],
+    note: 'Akuntansi Syariah kuat pada Ekonomi dan kemampuan kuantitatif; Bahasa Arab menjadi penguatan tambahan yang baik.'
+  },
+  'Manajemen Keuangan Syariah': {
+    options: ['Ekonomi', 'Matematika Tingkat Lanjut'],
+    note: 'Manajemen Keuangan Syariah memerlukan penguatan Ekonomi dan kemampuan kuantitatif.'
+  },
+  'Manajemen Bisnis Syariah': {
+    options: ['Ekonomi', 'Produk/Projek Kreatif dan Kewirausahaan'],
+    note: 'Manajemen Bisnis Syariah beririsan dengan bisnis, manajemen, dan kewirausahaan; Ekonomi menjadi dasar utama.'
+  },
+  'Manajemen Zakat dan Wakaf': {
+    options: ['Ekonomi', 'Bahasa Arab'],
+    note: 'Manajemen Zakat dan Wakaf memerlukan pemahaman ekonomi sekaligus literatur keislaman.'
+  },
+  'Manajemen Haji dan Umrah': {
+    options: ['Ekonomi', 'Bahasa Arab'],
+    note: 'Manajemen Haji dan Umrah memadukan pengelolaan layanan dan kemampuan memahami terminologi keislaman.'
+  },
+
   'Psikologi': {
     options: ['Sosiologi', 'Bahasa Indonesia Tingkat Lanjut', 'Bahasa Inggris Tingkat Lanjut'],
     note: 'Acuan yang diberikan pengguna menempatkan Sosiologi serta bahasa tingkat lanjut sebagai pilihan yang relevan.'
@@ -147,6 +169,32 @@ export const TKA_MAJOR_MAP = {
     options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
     note: 'Bahasa Arab menjadi penguatan utama untuk Pendidikan Bahasa Arab; Bahasa Indonesia Tingkat Lanjut mendukung literasi akademik dan kompetensi kependidikan.'
   },
+
+  'PGMI': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'PGMI memerlukan penguatan Bahasa Arab untuk sumber keislaman dan Bahasa Indonesia Tingkat Lanjut untuk literasi akademik serta kompetensi kependidikan.'
+  },
+  'PIAUD': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'PIAUD didukung Bahasa Arab sebagai penguatan sumber keislaman dan Bahasa Indonesia Tingkat Lanjut untuk kompetensi pendidikan anak usia dini.'
+  },
+  'Manajemen Pendidikan Islam': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'MPI memadukan kependidikan dan studi Islam; Bahasa Arab dan Bahasa Indonesia Tingkat Lanjut menjadi penguatan yang relevan.'
+  },
+  'Bahasa dan Sastra Arab': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'Bahasa Arab menjadi penguatan utama; Bahasa Indonesia Tingkat Lanjut membantu literasi akademik.'
+  },
+  'Dirasat Islamiyah': {
+    options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
+    note: 'Dirasat Islamiyah sangat terkait dengan penguasaan Bahasa Arab dan literasi akademik.'
+  },
+  'Studi Agama-Agama': {
+    options: ['Bahasa Arab', 'Sosiologi'],
+    note: 'Studi Agama-Agama relevan dengan Bahasa Arab untuk teks keislaman dan Sosiologi untuk kajian masyarakat dan keberagamaan.'
+  },
+
   'Ilmu Hukum': {
     options: ['Pendidikan Pancasila/PPKn', 'Sosiologi', 'Sejarah'],
     note: 'Untuk Ilmu Hukum, PPKn, Sosiologi, dan Sejarah menjadi pilihan penguatan yang relevan untuk literasi hukum, kewargaan, dan konteks sosial.'
@@ -171,6 +219,16 @@ export const TKA_MAJOR_MAP = {
     options: ['Ekonomi', 'Bahasa Arab'],
     note: 'Hukum Ekonomi Syariah memerlukan penguatan Ekonomi sekaligus Bahasa Arab untuk memahami terminologi dan sumber-sumber syariah.'
   },
+
+  'Hukum Pidana Islam (Jinayah)': {
+    options: ['Bahasa Arab', 'Pendidikan Pancasila/PPKn'],
+    note: 'Hukum Pidana Islam memerlukan Bahasa Arab untuk literatur fikih/jinayah dan PPKn untuk penguatan hukum dan kewargaan.'
+  },
+  'Perbandingan Mazhab': {
+    options: ['Bahasa Arab', 'Pendidikan Pancasila/PPKn'],
+    note: 'Perbandingan Mazhab sangat terkait dengan Bahasa Arab untuk kajian sumber fikih dan PPKn untuk wawasan hukum.'
+  },
+
   "Ilmu Al-Qur'an dan Tafsir": {
     options: ['Bahasa Arab', 'Bahasa Indonesia Tingkat Lanjut'],
     note: "Bahasa Arab menjadi prioritas utama untuk kajian Al-Qur'an dan tafsir; literasi Bahasa Indonesia Tingkat Lanjut membantu kemampuan analisis dan penulisan akademik."
@@ -206,6 +264,20 @@ export const TKA_MAJOR_MAP = {
   'Perbankan Syariah': {
     options: ['Ekonomi', 'Matematika Tingkat Lanjut'],
     note: 'Perbankan Syariah membutuhkan penguatan Ekonomi dan kemampuan kuantitatif; Bahasa Arab dapat menjadi penguatan tambahan untuk terminologi syariah.'
+  },
+
+
+  'Bimbingan dan Konseling Islam': {
+    options: ['Sosiologi', 'Bahasa Arab'],
+    note: 'BKI memerlukan pemahaman manusia dan masyarakat, ditopang Bahasa Arab untuk literatur keislaman.'
+  },
+  'Pengembangan Masyarakat Islam': {
+    options: ['Sosiologi', 'Bahasa Arab'],
+    note: 'PMI kuat pada kajian sosial kemasyarakatan dan penguatan literatur keislaman.'
+  },
+  'Sosiologi Agama': {
+    options: ['Sosiologi', 'Bahasa Arab'],
+    note: 'Sosiologi Agama menggabungkan pemahaman masyarakat dan kajian agama.'
   },
 
   'Desain Komunikasi Visual': {

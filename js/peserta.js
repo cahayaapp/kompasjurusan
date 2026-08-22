@@ -400,6 +400,22 @@ function renderSubjectChip(subject, type='elective'){
   return `<span class="tka-subject-chip ${type}"><span>${tkaSubjectIcon(subject)}</span>${subject}</span>`;
 }
 
+function priorityMajorTextHtml(item, limit=4){
+  if(!item) return '—';
+  const umum=(item.majors||[]).slice(0,limit);
+  const islam=(item.islamicMajors||[]).slice(0,limit);
+  const umumText=umum.length ? umum.join(', ') : '—';
+  return islam.length ? `${umumText}<br><span style="color:#b9f5e8">Ilmu Keislaman: ${islam.join(', ')}</span>` : umumText;
+}
+
+function priorityMajorTextPlain(item, limit=4){
+  if(!item) return '—';
+  const umum=(item.majors||[]).slice(0,limit);
+  const islam=(item.islamicMajors||[]).slice(0,limit);
+  const umumText=umum.length ? umum.join(', ') : '—';
+  return islam.length ? `${umumText} | Ilmu Keislaman: ${islam.join(', ')}` : umumText;
+}
+
 function renderTkaGuidance(result, compact=false){
   const qualified = resultRecommendations(result);
   const guidance = buildTkaGuidance(qualified);
@@ -426,24 +442,7 @@ function renderTkaGuidance(result, compact=false){
           ${priority.length === 1 ? '<div class="tka-choice-note">Pilihan kedua perlu disesuaikan dengan prodi target lain yang kamu pertimbangkan dan rekam mapel di rapor.</div>' : ''}
         </div>
       </div>
-      ${compact ? '' : `
-        <div class="tka-major-map">
-          <div class="tka-major-map-head"><b>Kalau target jurusanmu lebih spesifik</b><small>Lihat mapel pendukung/pilihan yang relevan untuk setiap jurusan pada rekomendasi teratas.</small></div>
-          ${(guidance.majorBreakdown || []).map(item=>`
-            <div class="tka-major-row">
-              <div class="tka-major-name">${item.major}</div>
-              <div class="tka-major-subjects">
-                ${item.options?.length ? item.options.map(x=>renderSubjectChip(x,'mini')).join('') : `<span class="tka-custom-label">${item.customLabel || 'Sesuaikan dengan prodi target.'}</span>`}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-        ${(guidance.islamicMajorBreakdown || []).length ? `<div class="tka-major-map islamic-major-map">
-          <div class="tka-major-map-head"><b>Jika memilih jalur Ilmu Keislaman</b><small>Program studi keislaman ditempatkan sesuai rumpun ilmunya, bukan sebagai rumpun terpisah.</small></div>
-          ${(guidance.islamicMajorBreakdown || []).map(item=>`<div class="tka-major-row"><div class="tka-major-name">${item.major}</div><div class="tka-major-subjects">${item.options?.length ? item.options.map(x=>renderSubjectChip(x,'mini')).join('') : `<span class="tka-custom-label">${item.customLabel || 'Sesuaikan dengan prodi target.'}</span>`}</div></div>`).join('')}
-        </div>` : ''}
-        <div class="tka-source-note">${guidance.note || 'Gunakan sebagai panduan awal. Pilihan final menyesuaikan prodi target dan mapel yang tercantum di rapor.'}</div>
-      `}
+      ${compact ? '' : `<div class="tka-source-note">${guidance.note || 'Gunakan sebagai panduan awal. Pilihan final menyesuaikan prodi target dan mapel yang tercantum di rapor.'}</div>`}
     </div>`;
 }
 
@@ -481,7 +480,7 @@ function renderResultCard(result, compact=false){
     <div class="panel-header"><div><h3>Hasil terbaru</h3><p>${result.summaryNarrative}</p></div><span class="badge approved">${formatDateTime(result.createdAt)}</span></div>
     <div class="result-hero">
       <div class="result-score-box"><small>Tipe dominan</small><b>${top?.label || '-'} (${top?.code || '-'})</b><div style="color:#fff4cc;line-height:1.7">${top?.description || ''}</div></div>
-      <div class="result-score-box"><small>Rekomendasi utama</small><b>${topRec?.cluster || 'Belum mencapai 60%'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${(topRec.majors || []).slice(0,4).join(', ')}` : 'Gunakan arah relatif sebagai bahan eksplorasi awal.'}</div></div>
+      <div class="result-score-box"><small>Rekomendasi utama</small><b>${topRec?.cluster || 'Belum mencapai 60%'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${priorityMajorTextHtml(topRec,4)}` : 'Gunakan arah relatif sebagai bahan eksplorasi awal.'}</div></div>
     </div>
     <div class="bars">${result.riasecChart.map(item=>`<div class="bar-item"><label>${item.code}</label><div class="bar-shell"><span style="width:${item.percent}%"></span></div><strong>${item.percent}%</strong></div>`).join('')}</div>
     ${renderTkaGuidance(result, true)}
@@ -553,7 +552,7 @@ function showResult(result){
     ${renderParticipantReportData(result)}
     <div class="result-hero">
       <div class="result-score-box"><small>Profil RIASEC dominan</small><b>${result.topRiasec.map(x=>`${x.label} (${x.code})`).join(' • ')}</b><div style="color:#fff4cc;line-height:1.7">${result.topRiasec.map(x=>x.description).join(' ')}</div></div>
-      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${(topRec.majors||[]).join(', ')}${(topRec.islamicMajors||[]).length ? `<br><span style="color:#b9f5e8">Ilmu Keislaman: ${(topRec.islamicMajors||[]).join(', ')}</span>` : ''}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div></div>
+      <div class="result-score-box"><small>Rumpun studi terkuat</small><b>${topRec?.cluster || 'Belum mencapai batas rekomendasi'}</b><div style="color:#fff4cc;line-height:1.7">${topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}<br>${priorityMajorTextHtml(topRec,6)}` : `Belum ada rumpun dengan skor ≥ ${RECOMMENDATION_MIN_PERCENT}%.`}</div></div>
     </div>
     <div class="card" style="padding:0;background:none;border:none;box-shadow:none">
       <div class="panel-header"><div><h3>Skor RIASEC</h3></div></div>

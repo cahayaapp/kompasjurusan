@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard Admin — Kompas Jurusan</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/app.css?v=10.3">
+  <link rel="stylesheet" href="assets/app.css?v=10.4">
 </head>
 <body>
   <div class="app-shell">
@@ -66,10 +66,18 @@
 
 
       <section id="section-results" class="section">
-        <div class="topbar"><div class="page-title"><h1>Laporan Hasil Tes</h1><p>Unduh hasil asesmen peserta dalam format PDF profesional seperti laporan hasil psikotes, lengkap dengan data peserta, penjabaran hasil, rumpun studi, jurusan, dan rekomendasi mapel TKA.</p></div></div>
+        <div class="topbar"><div class="page-title"><h1>Laporan Hasil Tes</h1><p>Lihat hasil peserta, unduh laporan satu per satu, unduh massal hasil yang dipilih, atau gabungkan seluruh hasil ke dalam satu PDF rekap.</p></div></div>
         <div class="card">
-          <div class="panel-header"><div><h3>Semua Hasil Asesmen</h3><p>Pilih hasil tertentu untuk mengunduh laporan PDF resmi Kompas Jurusan.</p></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Peserta</th><th>Tanggal Tes</th><th>RIASEC</th><th>Rumpun Utama</th><th>Kecocokan</th><th>PDF</th></tr></thead><tbody id="resultsBody"><tr><td colspan="6"><div class="empty">Memuat hasil asesmen...</div></td></tr></tbody></table></div>
+          <div class="results-toolbar">
+            <div class="results-toolbar-copy"><h3>Semua Hasil Asesmen</h3><p>Centang laporan yang ingin diunduh massal. Setiap laporan tetap menjadi file PDF terpisah.</p></div>
+            <div class="results-toolbar-actions">
+              <span class="selection-counter"><b id="resultsSelectedCount">0</b> dipilih</span>
+              <button class="btn btn-secondary" id="downloadSelectedResultsBtn" type="button" disabled>⬇ Download Massal</button>
+              <button class="btn btn-primary" id="downloadResultsRecapBtn" type="button">▤ Download Rekap Semua</button>
+            </div>
+          </div>
+          <div id="resultsBatchMessage"></div>
+          <div class="table-wrap"><table class="results-table"><thead><tr><th class="check-col"><label class="result-check"><input id="resultsSelectAll" type="checkbox" aria-label="Pilih semua hasil"><span></span></label></th><th>Peserta</th><th>Tanggal Tes</th><th>RIASEC</th><th>Rumpun Utama</th><th>Kecocokan</th><th>Aksi</th></tr></thead><tbody id="resultsBody"><tr><td colspan="7"><div class="empty">Memuat hasil asesmen...</div></td></tr></tbody></table></div>
         </div>
       </section>
 
@@ -108,6 +116,15 @@
     </div>
   </div>
 
-  <script type="module" src="js/admin.js?v=10.3"></script>
+
+  <div class="modal" id="adminResultModal">
+    <div class="modal-card result-view-modal">
+      <div class="modal-head"><div><div class="kicker">HASIL ASESMEN</div><h3 id="adminResultModalTitle">Detail Hasil Peserta</h3></div><button class="icon-btn" id="closeAdminResultModal" type="button">×</button></div>
+      <div id="adminResultModalBody"></div>
+      <div class="modal-footer-actions"><button class="btn btn-primary" id="downloadResultFromModalBtn" type="button">⬇ Unduh PDF Resmi</button></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/admin.js?v=10.4"></script>
 </body>
 </html>

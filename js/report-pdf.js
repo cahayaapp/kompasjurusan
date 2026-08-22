@@ -147,21 +147,30 @@ function drawParticipantCard(ctx,result,participant,y){
   return y+230;
 }
 
+function priorityMajorTextForPdf(item, limit=3){
+  if(!item) return '-';
+  const umum=(item.majors||[]).slice(0,limit);
+  const islam=(item.islamicMajors||[]).slice(0,limit);
+  const umumText=umum.length ? umum.join(', ') : '-';
+  return islam.length ? `${umumText}
+Ilmu Keislaman: ${islam.join(', ')}` : umumText;
+}
+
 function drawSummary(ctx,result,y){
   title(ctx,'Ringkasan Utama',60,y,32); y+=50;
   const top=result?.topRiasec?.[0]||{}; const topRec=recommendationsForResult(result,1)[0]||null; const relativeTop=relativeTopForResult(result,1)[0]||null;
   const cards=[
-    {label:'Profil RIASEC Dominan',value:`${top.label||'-'} (${top.code||'-'})`,note:top.description||'Kecenderungan minat utama.'},
-    {label:'Rumpun Studi Terkuat',value:topRec ? `${topRec.cluster}` : 'Belum mencapai batas 60%',note:topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}` : `Arah relatif tertinggi: ${relativeTop?.cluster||'-'} (${relativeTop?.percent||0}%).`},
-    {label:'Jurusan Prioritas',value:topRec ? (topRec.majors||[]).slice(0,3).join(', ') : '-',note:topRec ? 'Pilihan awal yang paling layak dieksplorasi lebih lanjut.' : 'Belum ditetapkan sebagai rekomendasi utama.'}
+    {label:'Profil RIASEC Dominan',value:`${top.label||'-'} (${top.code||'-'})`,note:top.description||'Kecenderungan minat utama.', valueSize:27, valueLines:3},
+    {label:'Rumpun Studi Terkuat',value:topRec ? `${topRec.cluster}` : 'Belum mencapai batas 60%',note:topRec ? `${topRec.percent}% • ${getFitInterpretation(topRec.percent).label}` : `Arah relatif tertinggi: ${relativeTop?.cluster||'-'} (${relativeTop?.percent||0}%).`, valueSize:27, valueLines:3},
+    {label:'Jurusan Prioritas',value:topRec ? priorityMajorTextForPdf(topRec,3) : '-',note:topRec ? 'Jurusan umum dan jalur keislaman yang paling layak dieksplorasi lebih lanjut.' : 'Belum ditetapkan sebagai rekomendasi utama.', valueSize:20, valueLines:5}
   ];
   cards.forEach((c,i)=>{
-    const x=60+i*374; rr(ctx,x,y,352,198,22,i===0?'#EEF5FF':i===1?'#EAFBFA':'#FFF7E6','#DCE7F4',2);
+    const x=60+i*374; rr(ctx,x,y,352,212,22,i===0?'#EEF5FF':i===1?'#EAFBFA':'#FFF7E6','#DCE7F4',2);
     smallLabel(ctx,c.label,x+24,y+22,i===0?C.blue:i===1?C.teal:C.orange);
-    textBlock(ctx,c.value,x+24,y+58,304,{size:27,weight:800,color:C.navy,lineHeight:1.2,maxLines:3});
-    textBlock(ctx,c.note,x+24,y+130,304,{size:17,weight:500,color:C.muted,lineHeight:1.35,maxLines:3});
+    textBlock(ctx,c.value,x+24,y+58,304,{size:c.valueSize||27,weight:800,color:C.navy,lineHeight:1.22,maxLines:c.valueLines||3});
+    textBlock(ctx,c.note,x+24,y+146,304,{size:16,weight:500,color:C.muted,lineHeight:1.35,maxLines:3});
   });
-  return y+228;
+  return y+242;
 }
 
 function drawRiasec(ctx,result,y){
@@ -445,7 +454,6 @@ async function buildCanvases(result,participant){
   p=canvasPage(); pages.push(p.canvas); await drawHeader(p.ctx,3,totalPages,result,participant,logo); y=205;
   y=drawSectionBand(p.ctx,'Penjabaran Hasil',y,'Dimensi pendukung, fokus persiapan, dan rekomendasi tindak lanjut.');
   y=drawDetailedScores(p.ctx,result,y);
-  if(y<1240) y=drawTopClusterBreakdown(p.ctx,result,y);
   drawNextSteps(p.ctx,result,y+12);
   drawFooter(p.ctx,3);
 
